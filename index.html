@@ -123,6 +123,11 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .warn-box svg { flex-shrink: 0; color: var(--radar) }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ok); outline-offset: 2px }
 .leaflet-container.picking { cursor: crosshair }
+.poi-cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
+.poi-cats button { font: inherit; font-size: 15px; font-weight: 600; min-height: 48px; border-radius: 12px; border: 2px solid var(--surface-2); background: var(--bg); color: var(--fg); display: flex; align-items: center; gap: 8px; padding: 0 12px; cursor: pointer; text-align: left }
+.poi-cats button[aria-pressed="true"] { border-color: var(--cat); }
+.poi-cats .sw { width: 14px; height: 14px; border-radius: 50%; background: var(--cat); flex-shrink: 0 }
+.pop .go { margin-top: 10px; width: 100%; background: var(--ok); color: var(--ok-dark); border-color: var(--ok) }
 @media (prefers-reduced-motion: reduce) { .rec .live { animation: none } }
 </style>
 </head>
@@ -155,6 +160,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 
 <div class="speed" id="speed-box"><b id="speed">–</b><span>km/h</span></div>
 <div class="fabs">
+  <button class="icon-btn fab" id="poi-btn" aria-label="Postos e serviços">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4"/><path d="M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>
+  </button>
   <button class="icon-btn fab radar" id="radar-here" aria-label="Avisar radar aqui">
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19.1 4.9a10 10 0 0 1 0 14.2M4.9 19.1a10 10 0 0 1 0-14.2"/></svg>
   </button>
@@ -243,6 +251,20 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     <p class="note" id="dest-msg" role="status"></p>
     <div class="list" id="dest-results"></div>
   </form>
+</div>
+
+<div class="sheet" id="poi-sheet" hidden>
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h2>Postos e serviços</h2>
+      <button class="icon-btn" id="poi-close" type="button" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p class="note">Escolha o que aparece no mapa:</p>
+    <div class="poi-cats" id="poi-cats"></div>
+    <p class="note" id="poi-msg" role="status"></p>
+    <div class="list" id="poi-list"></div>
+    <p class="note">Dados do OpenStreetMap. Horários e nomes podem estar desatualizados.</p>
+  </div>
 </div>
 
 <div class="sheet" id="list-sheet" hidden>
@@ -683,11 +705,121 @@ window.APP_CONFIG = {
     }
     osmLoading = false;
   }
+
+  // ---------- Postos e serviços (OpenStreetMap) ----------
+  const CATS = {
+    combustivel: { nome: "Postos de combustível", curto: "Posto", cor: "#FFD166", glyph: '<path d="M5 20V6a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v14M4 20h11M8 8h3"/><path d="M14 11h1.5a1.5 1.5 0 0 1 1.5 1.5V16a1.2 1.2 0 0 0 2.4 0V9L17 6.5"/>' },
+    comida: { nome: "Restaurantes e lanches", curto: "Restaurante", cor: "#F28482", glyph: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 21V3c-2 1.5-3 4-3 7h3"/>' },
+    hospedagem: { nome: "Hotéis e pousadas", curto: "Hospedagem", cor: "#B892FF", glyph: '<path d="M3 19V7M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11" r="2"/>' },
+    mecanica: { nome: "Mecânica e borracharia", curto: "Mecânica", cor: "#8FD3FE", glyph: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/>' }
+  };
+  const K_POI = "teste-ultrapassagem:servicos", K_POICAT = "teste-ultrapassagem:servicos-visiveis";
+  let pois = store.get(K_POI, { items: [], center: null, at: 0 });
+  let poiOn = store.get(K_POICAT, { combustivel: true, comida: false, hospedagem: false, mecanica: false });
+  let poiLoading = false;
+  const poiLayer = L.layerGroup().addTo(map);
+  const poiIcons = {};
+  const poiIcon = (cat) => poiIcons[cat] || (poiIcons[cat] = L.divIcon({ className: "", iconSize: [28, 28], iconAnchor: [14, 14],
+    html: `<div style="width:28px;height:28px;border-radius:8px;background:${CATS[cat].cor};border:2px solid #141B22;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#141B22" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${CATS[cat].glyph}</svg></div>` }));
+
+  function catOf(t) {
+    if (t.amenity === "fuel") return "combustivel";
+    if (["restaurant", "fast_food", "cafe", "food_court"].includes(t.amenity)) return "comida";
+    if (["hotel", "motel", "guest_house", "hostel"].includes(t.tourism)) return "hospedagem";
+    if (["car_repair", "tyres"].includes(t.shop)) return "mecanica";
+    return null;
+  }
+  function parsePois(json) {
+    const out = [];
+    for (const el of (json && json.elements) || []) {
+      const t = el.tags || {}, cat = catOf(t);
+      const lat = el.lat ?? (el.center && el.center.lat), lng = el.lon ?? (el.center && el.center.lon);
+      if (!cat || typeof lat !== "number") continue;
+      const tipoTxt = t.shop === "tyres" ? "Borracharia" : t.amenity === "fast_food" ? "Lanchonete" : t.amenity === "cafe" ? "Café" : t.tourism === "motel" ? "Motel" : t.tourism === "guest_house" ? "Pousada" : CATS[cat].curto;
+      out.push({ id: el.type + "/" + el.id, cat, lat: +lat.toFixed(6), lng: +lng.toFixed(6), tipo: tipoTxt,
+        nome: (t.name || t.brand || "").slice(0, 80), marca: t.brand && t.brand !== t.name ? t.brand.slice(0, 40) : "",
+        horario: (t.opening_hours || "").slice(0, 80), tel: (t.phone || t["contact:phone"] || "").slice(0, 30) });
+    }
+    return out.slice(0, 4000);
+  }
+  async function loadPois(force) {
+    if (!pos || poiLoading) return;
+    const fresh = pois.center && G.dist(pois.center, pos) < 8000 && Date.now() - pois.at < 12 * 3600 * 1000;
+    if (fresh && !force) return;
+    poiLoading = true;
+    const s = (pos[0] - 0.15).toFixed(4), n = (pos[0] + 0.15).toFixed(4), w = (pos[1] - 0.18).toFixed(4), e = (pos[1] + 0.18).toFixed(4), bb = `(${s},${w},${n},${e})`;
+    const q = `[out:json][timeout:25];(nwr["amenity"~"^(fuel|restaurant|fast_food|cafe|food_court)$"]${bb};nwr["tourism"~"^(hotel|motel|guest_house|hostel)$"]${bb};nwr["shop"~"^(car_repair|tyres)$"]${bb};);out center tags 4000;`;
+    for (const url of OVERPASS) {
+      try {
+        const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) });
+        if (!r.ok) continue;
+        pois = { items: parsePois(await r.json()), center: [pos[0], pos[1]], at: Date.now() };
+        store.set(K_POI, pois);
+        drawPois();
+        if (!$("poi-sheet").hidden) renderPoiSheet();
+        break;
+      } catch (err) { /* tenta o próximo servidor */ }
+    }
+    poiLoading = false;
+  }
+  // Desenha só os do tipo escolhido, perto do centro do mapa, para o celular não ficar lento.
+  let poiDrawn = null;
+  function drawPois(force) {
+    const c = map.getCenter(), center = [c.lat, c.lng], z = map.getZoom();
+    const key = Object.keys(CATS).filter((k) => poiOn[k]).join(",") + "|" + pois.at;
+    // O mapa se move a cada atualização do GPS: só redesenha se andou mais de 500 m, mudou o zoom ou os tipos.
+    if (force !== true && poiDrawn && poiDrawn.z === z && poiDrawn.key === key && G.dist(poiDrawn.center, center) < 500) return;
+    poiDrawn = { center, z, key };
+    poiLayer.clearLayers();
+    if (z < 12) return;
+    const near = pois.items.filter((p) => poiOn[p.cat]).map((p) => ({ p, d: G.dist(center, [p.lat, p.lng]) }))
+      .filter((x) => x.d < 6000).sort((a, b) => a.d - b.d).slice(0, 200);
+    for (const { p } of near) {
+      L.marker([p.lat, p.lng], { icon: poiIcon(p.cat) }).addTo(poiLayer).bindPopup(() => `<div class="pop"><b>${esc(p.nome || p.tipo)}</b>
+        <div class="sub">${esc(p.tipo)}${p.marca ? " · " + esc(p.marca) : ""}${pos ? " · " + fmtDist(G.dist(pos, [p.lat, p.lng])) : ""}</div>
+        ${p.horario ? `<div class="sub">Horário: ${esc(p.horario === "24/7" ? "24 horas" : p.horario)}</div>` : ""}
+        ${p.tel ? `<div class="sub">Telefone: ${esc(p.tel)}</div>` : ""}
+        <button type="button" class="go" data-go="${esc(p.id)}">Ir até aqui</button></div>`);
+    }
+  }
+  map.on("moveend", drawPois);
+  map.on("zoomend", drawPois);
+
+  function renderPoiSheet() {
+    $("poi-cats").innerHTML = Object.entries(CATS).map(([k, c]) =>
+      `<button type="button" data-cat="${k}" aria-pressed="${!!poiOn[k]}" style="--cat:${c.cor}"><span class="sw"></span>${c.nome}</button>`).join("");
+    const chosen = Object.keys(CATS).filter((k) => poiOn[k]);
+    if (!pos) { $("poi-msg").textContent = "Aguardando o GPS para mostrar o que está perto."; $("poi-list").innerHTML = ""; return; }
+    if (!pois.at) { $("poi-msg").textContent = poiLoading ? "Buscando postos e serviços na região…" : "Ainda não foi possível buscar os serviços da região. Confira a internet."; $("poi-list").innerHTML = ""; return; }
+    if (!chosen.length) { $("poi-msg").textContent = "Escolha pelo menos um tipo acima."; $("poi-list").innerHTML = ""; return; }
+    const near = pois.items.filter((p) => poiOn[p.cat]).map((p) => ({ p, d: G.dist(pos, [p.lat, p.lng]) })).sort((a, b) => a.d - b.d).slice(0, 15);
+    $("poi-msg").textContent = near.length ? "Mais perto de você:" : "Nada desse tipo cadastrado no OpenStreetMap num raio de uns 15 km.";
+    $("poi-list").innerHTML = near.map(({ p, d }) => `
+      <button class="item" type="button" data-go="${esc(p.id)}">
+        <span><b>${esc(p.nome || p.tipo)}</b><small>${esc(p.tipo)}${p.horario === "24/7" ? " · 24 horas" : ""}</small></span>
+        <span class="pill" style="background:${CATS[p.cat].cor}33;color:${CATS[p.cat].cor}">${fmtDist(d)}</span></button>`).join("");
+  }
+  function goToPoi(id) {
+    const p = pois.items.find((x) => x.id === id);
+    if (!p) return;
+    map.closePopup(); $("poi-sheet").hidden = true;
+    startRoute({ ll: [p.lat, p.lng], name: p.nome || p.tipo, short: p.nome || p.tipo });
+  }
+  $("poi-btn").addEventListener("click", () => { renderPoiSheet(); $("poi-sheet").hidden = false; loadPois(); });
+  $("poi-close").addEventListener("click", () => { $("poi-sheet").hidden = true; });
+  $("poi-sheet").addEventListener("click", (ev) => {
+    if (ev.target === $("poi-sheet")) { $("poi-sheet").hidden = true; return; }
+    const cat = ev.target.closest("[data-cat]");
+    if (cat) { poiOn[cat.dataset.cat] = !poiOn[cat.dataset.cat]; store.set(K_POICAT, poiOn); renderPoiSheet(); drawPois(); return; }
+    const go = ev.target.closest("[data-go]");
+    if (go) goToPoi(go.dataset.go);
+  });
   function redraw() { drawTrechos(); drawRadares(); renderList(); }
   map.on("popupopen", (e) => {
     const el = e.popup.getElement();
     if (!el) return;
     el.querySelectorAll("button[data-vote]").forEach((b) => b.addEventListener("click", () => { vote(b.dataset.id, b.dataset.vote); map.closePopup(); }));
+    el.querySelectorAll("button[data-go]").forEach((b) => b.addEventListener("click", () => goToPoi(b.dataset.go)));
   });
 
   function renderList() {
@@ -824,7 +956,8 @@ window.APP_CONFIG = {
     return G.prepareRoute(j.routes[0]);
   }
   async function startRoute(dest) {
-    if (!pos) { $("dest-msg").textContent = "Aguarde o GPS achar sua posição para calcular a rota."; return; }
+    if (!pos) { $("dest-msg").textContent = "Aguarde o GPS achar sua posição para calcular a rota."; setStatus("Aguarde o GPS achar sua posição para calcular a rota.", true); return; }
+    setStatus("Calculando a rota…");
     $("dest-msg").textContent = "Calculando a rota…";
     try {
       const route = await fetchRoute(pos, dest.ll);
@@ -840,7 +973,8 @@ window.APP_CONFIG = {
       speak(`Rota calculada. ${voiceDist(route.total)} até ${dest.short}.`);
       updateNav();
       updateTop();
-    } catch (e) { $("dest-msg").textContent = "Não foi possível calcular a rota agora. Confira a internet e tente de novo."; }
+    } catch (e) { $("dest-msg").textContent = "Não foi possível calcular a rota agora. Confira a internet e tente de novo."; setStatus("Não foi possível calcular a rota agora. Confira a internet e tente de novo.", true); return; }
+    setStatus("");
   }
   function drawRoute() {
     routeLayer.clearLayers();
@@ -928,7 +1062,7 @@ window.APP_CONFIG = {
       if (!prev || G.dist(prev, here) >= MIN_STEP) { recPoints.push(round6(here)); recLine.setLatLngs(recPoints); }
     }
     updateNav();
-    loadOsm();
+    loadOsm().then(() => loadPois());
     updateAlerts();
     updateTop(c.accuracy);
   }
