@@ -350,14 +350,14 @@ window.APP_CONFIG = {
     if (!hit) return null;
     const id = hit.radar.id, lim = hit.radar.limite;
     const set = fired[id] || (fired[id] = []);
-    const over = kmh != null && kmh > lim + 2;
+    const over = lim != null && kmh != null && kmh > lim + 2;
     let stage = null;
     for (const s of STAGES) if (hit.d <= s && !set.includes(s)) stage = s; // pega o menor estágio ainda não avisado
     if (stage == null) return null;
     for (const s of STAGES) if (s >= stage && !set.includes(s)) set.push(s);
     const distTxt = stage === 1000 ? "um quilômetro" : `${stage} metros`;
     let text;
-    if (stage === 1000) text = `Radar a ${distTxt}. Limite ${lim}.`;
+    if (stage === 1000) text = lim != null ? `Radar a ${distTxt}. Limite ${lim}.` : `Radar a ${distTxt}.`;
     else if (over && stage <= 300) text = `Atenção! Radar a ${distTxt}. Você está a ${Math.round(kmh)}. Reduza para ${lim}.`;
     else if (over) text = `Radar a ${distTxt}. Reduza para ${lim}.`;
     else text = `Radar a ${distTxt}.`;
@@ -476,7 +476,9 @@ window.APP_CONFIG = {
   const NOMES = { permitida: "Liberada", proibida: "Proibida", terceira: "3ª faixa" };
   const RTIPOS = { fixo: "Radar fixo", lombada: "Lombada eletrônica", movel: "Radar móvel" };
   const K = { trechos: "teste-ultrapassagem:trechos", radares: "teste-ultrapassagem:radares", votos: "teste-ultrapassagem:votos",
-    meus: "teste-ultrapassagem:meus-votos", nome: "teste-ultrapassagem:nome", dev: "teste-ultrapassagem:dispositivo", som: "teste-ultrapassagem:som" };
+    meus: "teste-ultrapassagem:meus-votos", nome: "teste-ultrapassagem:nome", dev: "teste-ultrapassagem:dispositivo", som: "teste-ultrapassagem:som",
+    osm: "teste-ultrapassagem:radares-osm" };
+  const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
   const MIN_ACC = 35, MIN_STEP = 10, MIN_TRECHO = 50;
 
   const store = {
@@ -515,6 +517,20 @@ window.APP_CONFIG = {
   let nav = null;                                   // {dest, route, layer, spoken:{}, offCount, lastReroute}
   let listTab = "trechos";
   let watchId = null;
+  let osm = store.get(K.osm, { items: [], center: null, at: 0 });   // radares do OpenStreetMap da região
+  let osmLoading = false;
+
+  // Id fixo (formato uuid) para cada radar do OpenStreetMap, para poder receber votos no banco.
+  function osmUuid(osmId) {
+    const h = (seed) => { let x = seed >>> 0; const s = "osm-node-" + osmId; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619) >>> 0; } return x.toString(16).padStart(8, "0"); };
+    const hex = h(2166136261) + h(5381) + h(1315423911) + h(3141592653);
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-${(8 + (parseInt(hex[16], 16) & 3)).toString(16)}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+  }
+  // Radares do OpenStreetMap que não repetem um radar já marcado pela equipe (a até 60 m).
+  function osmVisible() {
+    return osm.items.filter((o) => !radares.some((r) => G.dist([r.lat, r.lng], [o.lat, o.lng]) < 60));
+  }
+  const allRadares = () => [...radares, ...osmVisible()];
 
   // ---------- Mapa ----------
   const map = L.map("map", { zoomControl: false }).setView([-15.8, -47.9], 5);
@@ -529,8 +545,8 @@ window.APP_CONFIG = {
       '<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="rgba(77,178,255,0.18)"/>' +
       '<path d="M20 6 L30 32 L20 26 L10 32 Z" fill="#F2F5F7" stroke="#4DB2FF" stroke-width="3" stroke-linejoin="round"/></svg></div>' });
   let carMarker = null, accCircle = null;
-  const radarIcon = (lim, faded) => L.divIcon({ className: "", iconSize: [34, 34], iconAnchor: [17, 17],
-    html: `<div style="width:34px;height:34px;border-radius:50%;background:#fff;border:4px solid ${faded ? "#8C98A3" : "#E5484D"};display:flex;align-items:center;justify-content:center;font:800 13px Overpass,Arial,sans-serif;color:#141414;opacity:${faded ? 0.55 : 1};box-shadow:0 0 0 3px #FF9A3C">${lim}</div>` });
+  const radarIcon = (lim, faded, unconfirmed) => L.divIcon({ className: "", iconSize: [34, 34], iconAnchor: [17, 17],
+    html: `<div style="width:34px;height:34px;border-radius:50%;background:#fff;border:4px solid ${faded ? "#8C98A3" : "#E5484D"};display:flex;align-items:center;justify-content:center;font:800 13px Overpass,Arial,sans-serif;color:#141414;opacity:${faded ? 0.55 : 1};box-shadow:0 0 0 3px ${unconfirmed ? "#9AA7B2" : "#FF9A3C"}">${lim == null ? "?" : lim}</div>` });
 
   // ---------- Votos ----------
   function counts(id) {
@@ -621,12 +637,51 @@ window.APP_CONFIG = {
   }
   function drawRadares() {
     radaresLayer.clearLayers();
-    for (const r of radares) {
-      const m = L.marker([r.lat, r.lng], { icon: radarIcon(r.limite, disputed(r.id)) }).addTo(radaresLayer);
-      m.bindPopup(() => `<div class="pop"><b>${RTIPOS[r.tipo] || "Radar"} · ${r.limite} km/h</b>
+    for (const r of allRadares()) {
+      const fromOsm = r.fonte === "osm";
+      const m = L.marker([r.lat, r.lng], { icon: radarIcon(r.limite, disputed(r.id), fromOsm && counts(r.id).sim === 0) }).addTo(radaresLayer);
+      m.bindPopup(() => `<div class="pop"><b>${RTIPOS[r.tipo] || "Radar"} · ${r.limite == null ? "limite não informado" : r.limite + " km/h"}</b>
         <div class="sub">${r.direcao == null ? "Vale para os dois sentidos" : "Vale para um sentido da via"}</div>
-        <div class="sub">Por ${esc(r.autor || "alguém da equipe")} em ${fmtDate(r.criado_em)}</div>${votesHtml(r.id)}</div>`);
+        ${fromOsm
+          ? `<div class="sub">Fonte: <a href="https://www.openstreetmap.org/node/${esc(r.osmId)}" target="_blank" rel="noopener">OpenStreetMap</a>. Ainda não conferido pela equipe se ninguém confirmou.</div>`
+          : `<div class="sub">Por ${esc(r.autor || "alguém da equipe")} em ${fmtDate(r.criado_em)}</div>`}${votesHtml(r.id)}</div>`);
     }
+  }
+
+  // ---------- Radares do OpenStreetMap ----------
+  function parseOsm(json) {
+    const out = [];
+    for (const el of (json && json.elements) || []) {
+      if (el.type !== "node" || typeof el.lat !== "number") continue;
+      const t = el.tags || {};
+      const ms = parseInt(String(t.maxspeed || "").replace(/[^0-9].*$/, ""), 10);
+      const dirRaw = t["camera:direction"] ?? t.direction;
+      const dir = /^\d{1,3}(\.\d+)?$/.test(String(dirRaw || "").trim()) ? Math.round(parseFloat(dirRaw)) % 360 : null;
+      out.push({ id: osmUuid(el.id), osmId: String(el.id), fonte: "osm", lat: +el.lat.toFixed(6), lng: +el.lon.toFixed(6),
+        limite: ms >= 20 && ms <= 130 ? ms : null, tipo: "fixo", direcao: dir });
+    }
+    return out.slice(0, 3000);
+  }
+  async function loadOsm(force) {
+    if (!pos || osmLoading) return;
+    const fresh = osm.center && G.dist(osm.center, pos) < 20000 && Date.now() - osm.at < 24 * 3600 * 1000;
+    if (fresh && !force) return;
+    osmLoading = true;
+    const s = (pos[0] - 0.3).toFixed(4), n = (pos[0] + 0.3).toFixed(4), w = (pos[1] - 0.35).toFixed(4), e = (pos[1] + 0.35).toFixed(4);
+    const q = `[out:json][timeout:25];node["highway"="speed_camera"](${s},${w},${n},${e});out body 3000;`;
+    for (const url of OVERPASS) {
+      try {
+        const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) });
+        if (!r.ok) continue;
+        const items = parseOsm(await r.json());
+        osm = { items, center: [pos[0], pos[1]], at: Date.now() };
+        store.set(K.osm, osm);
+        drawRadares(); renderList(); updateTop();
+        setStatus(items.length ? `${items.length} ${items.length === 1 ? "radar do OpenStreetMap carregado" : "radares do OpenStreetMap carregados"} nesta região.` : "O OpenStreetMap não tem radares marcados nesta região.");
+        break;
+      } catch (err) { /* tenta o próximo servidor */ }
+    }
+    osmLoading = false;
   }
   function redraw() { drawTrechos(); drawRadares(); renderList(); }
   map.on("popupopen", (e) => {
@@ -651,11 +706,13 @@ window.APP_CONFIG = {
           <span><b>${esc(t.rodovia || "Rodovia não informada")}${t.km ? " · km " + esc(t.km) : ""}</b><small>${fmtDist(t.extensao_m || 0)} · ${c.sim} conf.${c.nao ? ` · ${c.nao} não` : ""} · ${esc(t.autor || "sem nome")}${t._pendente ? " · não enviado" : ""}</small></span>
           <span class="pill ${esc(t.tipo)}">${NOMES[t.tipo] || ""}</span></button>`; }).join("");
     } else {
-      if (!radares.length) { el.innerHTML = '<p class="note">Nenhum radar ainda. Toque no botão laranja do radar quando passar por um, ou em "Pôr radar no mapa".</p>'; return; }
+      const nOsm = osmVisible().length;
+      const osmNote = `<p class="note">${nOsm ? `Mais ${nOsm} ${nOsm === 1 ? "radar" : "radares"} do OpenStreetMap nesta região aparecem no mapa com o contorno cinza até alguém da equipe confirmar.` : "O OpenStreetMap não tem radares carregados para esta região."}</p>`;
+      if (!radares.length) { el.innerHTML = '<p class="note">Nenhum radar marcado pela equipe ainda. Toque no botão laranja do radar quando passar por um, ou em "Pôr radar no mapa".</p>' + osmNote; return; }
       el.innerHTML = radares.slice(0, 300).map((r) => { const c = counts(r.id); return `
         <button class="item" type="button" data-kind="r" data-id="${esc(r.id)}">
           <span><b>${RTIPOS[r.tipo] || "Radar"} · ${r.limite} km/h</b><small>${c.sim} conf.${c.nao ? ` · ${c.nao} não` : ""} · ${esc(r.autor || "sem nome")} · ${fmtDate(r.criado_em)}${r._pendente ? " · não enviado" : ""}</small></span>
-          <span class="pill radar">${r.limite}</span></button>`; }).join("");
+          <span class="pill radar">${r.limite}</span></button>`; }).join("") + osmNote;
     }
   }
 
@@ -695,27 +752,27 @@ window.APP_CONFIG = {
   $("sound").addEventListener("click", () => { soundOn = !soundOn; store.set(K.som, soundOn); renderSound(); if (!soundOn) try { speechSynthesis.cancel(); } catch (e) {} });
 
   // ---------- Alertas ----------
-  const activeRadares = () => radares.filter((r) => !disputed(r.id));
+  const activeRadares = () => allRadares().filter((r) => !disputed(r.id));
   const activeTrechos = () => trechos.filter((t) => !disputed(t.id));
   function updateAlerts() {
     if (!pos) return;
     // Radar
-    G.resetFar(pos, radares, fired);
+    G.resetFar(pos, allRadares(), fired);
     const hit = G.radarAhead(pos, heading, activeRadares());
     const box = $("alert");
     if (hit && hit.d <= 1000) {
-      const lim = hit.radar.limite, over = kmh != null && kmh > lim + 2;
-      $("alert-lim").textContent = lim;
+      const lim = hit.radar.limite, over = lim != null && kmh != null && kmh > lim + 2;
+      $("alert-lim").textContent = lim == null ? "?" : lim;
       $("alert-kind").textContent = (RTIPOS[hit.radar.tipo] || "Radar").toUpperCase();
       $("alert-dist").textContent = fmtDist(hit.d);
-      $("alert-msg").textContent = over ? `Você está a ${Math.round(kmh)}. Reduza para ${lim} km/h` : `Limite ${lim} km/h`;
+      $("alert-msg").textContent = over ? `Você está a ${Math.round(kmh)}. Reduza para ${lim} km/h` : lim == null ? "Limite não informado: confira a placa" : `Limite ${lim} km/h`;
       box.classList.toggle("over", over);
       box.hidden = false;
       const ann = G.radarAnnouncement(hit, kmh, fired);
       if (ann) { if (ann.urgent) beep(3); else beep(1); speak(ann.text, ann.urgent); }
       if (over && hit.d <= 150 && Date.now() - lastBeep > 1500) { beep(2); lastBeep = Date.now(); }
     } else box.hidden = true;
-    $("speed-box").classList.toggle("over", !!(hit && hit.d <= 1000 && kmh != null && kmh > hit.radar.limite + 2));
+    $("speed-box").classList.toggle("over", !!(hit && hit.d <= 1000 && hit.radar.limite != null && kmh != null && kmh > hit.radar.limite + 2));
 
     // Ultrapassagem
     const st = G.passingState(pos, heading, activeTrechos());
@@ -871,6 +928,7 @@ window.APP_CONFIG = {
       if (!prev || G.dist(prev, here) >= MIN_STEP) { recPoints.push(round6(here)); recLine.setLatLngs(recPoints); }
     }
     updateNav();
+    loadOsm();
     updateAlerts();
     updateTop(c.accuracy);
   }
@@ -1067,7 +1125,8 @@ window.APP_CONFIG = {
     const rows = [
       ...trechos.map((t) => { const a = (t.pontos || [])[0] || [], z = (t.pontos || []).slice(-1)[0] || [], c = counts(t.id);
         return ["trecho", t.id, t.tipo, "", t.rodovia, t.km, t.extensao_m, a[0], a[1], z[0], z[1], c.sim, c.nao, t.autor, t.obs, t.criado_em]; }),
-      ...radares.map((r) => { const c = counts(r.id); return ["radar", r.id, r.tipo, r.limite, "", "", "", r.lat, r.lng, "", "", c.sim, c.nao, r.autor, "", r.criado_em]; })
+      ...radares.map((r) => { const c = counts(r.id); return ["radar", r.id, r.tipo, r.limite, "", "", "", r.lat, r.lng, "", "", c.sim, c.nao, r.autor, "", r.criado_em]; }),
+      ...osmVisible().map((r) => { const c = counts(r.id); return ["radar_openstreetmap", r.osmId, r.tipo, r.limite ?? "", "", "", "", r.lat, r.lng, "", "", c.sim, c.nao, "OpenStreetMap", "", ""]; })
     ].map((r) => r.map(q).join(","));
     const blob = new Blob(["﻿" + [head.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob), a = document.createElement("a");
