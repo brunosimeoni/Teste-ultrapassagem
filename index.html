@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#141B22">
+<title>Teste de Ultrapassagem</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onerror="this.onerror=null;this.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@700&display=swap">
+<style>
+:root {
+  --bg: #141B22; --surface: #1A2129; --surface-2: #232C36; --fg: #F2F5F7; --muted: #9AA7B2;
+  --ok: #4DB2FF; --ok-dark: #0B1622; --no: #8C98A3; --third: #3DD68C; --rec: #FF5A5A; --warn: #FF9A3C;
+  --font: "Overpass", "Helvetica Neue", Arial, sans-serif; --mono: "Overpass Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--font); overflow: hidden }
+#map { position: fixed; inset: 0; background: #0f1418 }
+.leaflet-tile-pane { filter: brightness(0.62) saturate(0.6) contrast(1.1) }
+.leaflet-control-attribution { background: rgba(20,27,34,0.75) !important; color: var(--muted) !important; font-size: 10px }
+.leaflet-control-attribution a { color: var(--ok) !important }
+
+.top { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); left: calc(env(safe-area-inset-left, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 12px);
+  background: var(--surface); border-radius: 18px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 500 }
+.top .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--warn); flex-shrink: 0 }
+.top .dot.ok { background: var(--third) }
+.top .txt { display: flex; flex-direction: column; min-width: 0; flex: 1 }
+.top b { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.top span { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.icon-btn { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--surface-2); color: var(--fg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer }
+
+.speed { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 12px); bottom: calc(env(safe-area-inset-bottom, 0px) + 196px); z-index: 500;
+  width: 76px; height: 76px; border-radius: 50%; background: var(--surface); border: 3px solid var(--surface-2); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,0.4) }
+.speed b { font-family: var(--mono); font-size: 28px; line-height: 1 }
+.speed span { font-size: 11px; color: var(--muted) }
+.recenter { position: fixed; right: calc(env(safe-area-inset-right, 0px) + 12px); bottom: calc(env(safe-area-inset-bottom, 0px) + 200px); z-index: 500; width: 56px; height: 56px; background: var(--surface); box-shadow: 0 6px 18px rgba(0,0,0,0.4) }
+.recenter.active { color: var(--ok) }
+
+.panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 600; background: var(--surface); border-radius: 22px 22px 0 0;
+  padding: 14px calc(env(safe-area-inset-right, 0px) + 14px) calc(env(safe-area-inset-bottom, 0px) + 14px) calc(env(safe-area-inset-left, 0px) + 14px);
+  display: flex; flex-direction: column; gap: 12px; box-shadow: 0 -8px 24px rgba(0,0,0,0.35) }
+.types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.types button { font: inherit; font-size: 14px; font-weight: 600; color: var(--fg); background: var(--surface-2); border: 2px solid transparent; border-radius: 12px; min-height: 48px; cursor: pointer }
+.types button[aria-pressed="true"][data-tipo="permitida"] { border-color: var(--ok); color: var(--ok) }
+.types button[aria-pressed="true"][data-tipo="proibida"] { border-color: var(--no); color: var(--fg) }
+.types button[aria-pressed="true"][data-tipo="terceira"] { border-color: var(--third); color: var(--third) }
+.rec { font: inherit; font-weight: 800; font-size: 20px; border: none; border-radius: 16px; min-height: 64px; cursor: pointer; background: var(--ok); color: var(--ok-dark); display: flex; align-items: center; justify-content: center; gap: 10px }
+.rec.on { background: var(--rec); color: #1A0606 }
+.rec:disabled { opacity: 0.45 }
+.rec .live { width: 12px; height: 12px; border-radius: 50%; background: currentColor; animation: pulse 1s infinite }
+@keyframes pulse { 50% { opacity: 0.25 } }
+.status { font-size: 14px; color: var(--muted); min-height: 1.3em; margin: 0; text-align: center }
+.status.err { color: var(--warn) }
+
+.sheet { position: fixed; inset: 0; z-index: 900; background: rgba(0,0,0,0.55); display: flex; align-items: flex-end }
+.sheet[hidden] { display: none }
+.sheet .box { width: 100%; max-height: 85%; overflow: auto; background: var(--surface); border-radius: 22px 22px 0 0;
+  padding: 18px calc(env(safe-area-inset-right, 0px) + 16px) calc(env(safe-area-inset-bottom, 0px) + 18px) calc(env(safe-area-inset-left, 0px) + 16px); display: flex; flex-direction: column; gap: 14px }
+.sheet h2 { margin: 0; font-size: 22px }
+.sheet label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 600 }
+.sheet input, .sheet textarea { font: inherit; font-size: 17px; color: var(--fg); background: var(--bg); border: 1px solid var(--surface-2); border-radius: 10px; padding: 12px; min-height: 48px }
+.sheet .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.btn { font: inherit; font-weight: 700; font-size: 16px; border: none; border-radius: 12px; min-height: 52px; cursor: pointer; background: var(--ok); color: var(--ok-dark) }
+.btn.ghost { background: var(--surface-2); color: var(--fg) }
+.list { display: flex; flex-direction: column; gap: 8px }
+.item { background: var(--bg); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; gap: 10px; align-items: center; cursor: pointer; border: none; color: var(--fg); font: inherit; text-align: left; width: 100% }
+.item b { font-size: 15px } .item small { display: block; color: var(--muted); font-size: 13px }
+.pill { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; white-space: nowrap }
+.pill.permitida { background: rgba(77,178,255,0.15); color: var(--ok) } .pill.proibida { background: rgba(140,152,163,0.18); color: var(--fg) } .pill.terceira { background: rgba(61,214,140,0.15); color: var(--third) }
+.note { font-size: 13px; color: var(--muted); margin: 0 }
+.start { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: flex; flex-direction: column; justify-content: center; gap: 16px;
+  padding: 24px calc(env(safe-area-inset-right, 0px) + 24px) 24px calc(env(safe-area-inset-left, 0px) + 24px) }
+.start[hidden] { display: none }
+.start h1 { margin: 0; font-size: 30px; font-weight: 800 }
+.start p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.45; max-width: 46ch }
+.warn-box { display: flex; gap: 10px; background: var(--surface); border-radius: 12px; padding: 12px 14px; font-size: 14px; color: #C2CCD4 }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ok); outline-offset: 2px }
+@media (prefers-reduced-motion: reduce) { .rec .live { animation: none } }
+</style>
+</head>
+<body>
+<div id="map" role="application" aria-label="Mapa"></div>
+
+<div class="top">
+  <div class="dot" id="gps-dot" aria-hidden="true"></div>
+  <div class="txt"><b id="top-title">Procurando GPS…</b><span id="top-sub">Permita o acesso à localização</span></div>
+  <button class="icon-btn" id="open-list" aria-label="Trechos marcados">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
+  </button>
+</div>
+
+<div class="speed" aria-live="off"><b id="speed">–</b><span>km/h</span></div>
+<button class="icon-btn recenter active" id="recenter" aria-label="Seguir minha posição">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l7 19-7-4-7 4 7-19z"/></svg>
+</button>
+
+<div class="panel">
+  <div class="types" role="group" aria-label="Tipo de trecho">
+    <button type="button" data-tipo="permitida" aria-pressed="true">Liberada</button>
+    <button type="button" data-tipo="proibida" aria-pressed="false">Proibida</button>
+    <button type="button" data-tipo="terceira" aria-pressed="false">3ª faixa</button>
+  </div>
+  <button class="rec" id="rec" type="button" disabled>Começou a reta</button>
+  <p class="status" id="status" role="status"></p>
+</div>
+
+<div class="sheet" id="save-sheet" hidden>
+  <form class="box" id="save-form">
+    <h2>Salvar trecho</h2>
+    <p class="note" id="save-summary"></p>
+    <div class="row">
+      <label for="s-rodovia">Rodovia<input id="s-rodovia" placeholder="BR-116" autocomplete="off"></label>
+      <label for="s-km">Km (opcional)<input id="s-km" inputmode="decimal" placeholder="286"></label>
+    </div>
+    <label for="s-obs">Observação<textarea id="s-obs" rows="2" placeholder="Ex.: reta longa depois do posto"></textarea></label>
+    <div class="row">
+      <button class="btn ghost" type="button" id="s-discard">Descartar</button>
+      <button class="btn" type="submit" id="s-save">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<div class="sheet" id="list-sheet" hidden>
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h2>Trechos marcados</h2>
+      <button class="icon-btn" id="close-list" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p class="note" id="sync-note"></p>
+    <div class="list" id="list"></div>
+    <label for="nome">Seu nome (aparece nos trechos)<input id="nome" placeholder="Ex.: João" autocomplete="name"></label>
+    <button class="btn ghost" type="button" id="export">Baixar planilha (CSV)</button>
+  </div>
+</div>
+
+<div class="start" id="start">
+  <h1>Teste de Ultrapassagem</h1>
+  <p>O mapa acompanha o carro. Quando a faixa ficar tracejada, toque em <b>Começou a reta</b>. Quando voltar a ser contínua, toque em <b>Terminou a reta</b>. O GPS grava o trecho sozinho.</p>
+  <div class="warn-box"><span aria-hidden="true">⚠</span><span>Quem toca nos botões é o passageiro. O motorista só dirige.</span></div>
+  <button class="btn" id="go" type="button" style="min-height:60px;font-size:19px">Abrir mapa e ativar GPS</button>
+  <p id="boot-error" role="alert" style="margin:0;color:var(--warn);font-size:15px;line-height:1.45" hidden></p>
+</div>
+
+<script>
+  // Mostra na tela qualquer erro que impeça o app de funcionar.
+  window.__bootError = function (msg) {
+    var el = document.getElementById("boot-error");
+    if (el) { el.textContent = msg; el.hidden = false; }
+  };
+  window.addEventListener("error", function (e) {
+    window.__bootError("Erro ao iniciar o app: " + (e && e.message ? e.message : "desconhecido") + ". Recarregue a página.");
+  });
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  if (!window.L) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"><\/script>');
+</script>
+<script>
+  if (!window.L) document.write('<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"><\/script>');
+</script>
+<script>
+// Preencha com os dados do seu projeto Supabase (veja o LEIAME.md).
+// Deixando em branco, o app funciona só no celular de cada pessoa, sem compartilhar com a equipe.
+window.APP_CONFIG = {
+  SUPABASE_URL: "",       // ex.: "https://abcdefgh.supabase.co"
+  SUPABASE_ANON_KEY: ""   // a chave "anon public" do projeto
+};
+</script>
+<script>
+(() => {
+  "use strict";
+
+  const CFG = window.APP_CONFIG || {};
+  const REMOTE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+  const COLORS = { permitida: "#4DB2FF", proibida: "#8C98A3", terceira: "#3DD68C" };
+  const NOMES = { permitida: "Liberada", proibida: "Proibida", terceira: "3ª faixa" };
+  const KEY_TRECHOS = "teste-ultrapassagem:trechos";
+  const KEY_NOME = "teste-ultrapassagem:nome";
+  const MIN_ACC = 35;      // metros: pontos menos precisos que isso são ignorados na gravação
+  const MIN_STEP = 10;     // metros entre pontos gravados
+  const MIN_TRECHO = 50;   // metros: trecho mais curto que isso é descartado
+
+  const $ = (id) => document.getElementById(id);
+  const bootError = (msg) => (window.__bootError ? window.__bootError(msg) : alert(msg));
+
+  // ---------- Checagens antes de abrir o mapa ----------
+  if (!window.L) {
+    const msg = "O mapa não carregou. Confira se o celular está com internet e abra o app pelo link https do Netlify, não pelo arquivo direto do zip.";
+    bootError(msg);
+    $("go").addEventListener("click", () => bootError(msg));
+    return;
+  }
+  if (!window.isSecureContext || !("geolocation" in navigator)) {
+    const msg = location.protocol === "file:"
+      ? "O app foi aberto como arquivo. O GPS só funciona pelo link https (por exemplo, o do Netlify)."
+      : "Este endereço não permite usar o GPS. Abra o app por um link que comece com https://.";
+    bootError(msg);
+    $("go").addEventListener("click", () => bootError(msg));
+    return;
+  }
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  // ---------- Mapa ----------
+  const map = L.map("map", { zoomControl: false, attributionControl: true }).setView([-15.8, -47.9], 5);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+
+  const carIcon = L.divIcon({
+    className: "",
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    html: '<div id="car" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;transition:transform .4s">' +
+      '<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="rgba(77,178,255,0.18)"/>' +
+      '<path d="M20 6 L30 32 L20 26 L10 32 Z" fill="#F2F5F7" stroke="#4DB2FF" stroke-width="3" stroke-linejoin="round"/></svg></div>'
+  });
+  let carMarker = null, accCircle = null;
+  const trechosLayer = L.layerGroup().addTo(map);
+  let recLine = null;
+
+  // ---------- Estado ----------
+  let tipo = "permitida";
+  let follow = true;
+  let pos = null;          // última posição boa
+  let lastPos = null;      // para calcular velocidade quando o GPS não informa
+  let recording = false;
+  let recPoints = [];
+  let pendingTrecho = null;
+  let trechos = store.get(KEY_TRECHOS, []);
+  let watchId = null;
+  let wakeLock = null;
+
+  // ---------- Utilidades ----------
+  const R = 6371000;
+  const rad = (d) => d * Math.PI / 180;
+  function dist(a, b) {
+    const dLat = rad(b[0] - a[0]), dLng = rad(b[1] - a[1]);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  const lineLength = (pts) => pts.reduce((s, p, i) => (i ? s + dist(pts[i - 1], p) : 0), 0);
+  const fmtDist = (m) => (m >= 1000 ? (m / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " km" : Math.round(m) + " m");
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === "x" ? r : (r & 3 | 8)).toString(16); }));
+  function thin(pts, max = 400) {
+    if (pts.length <= max) return pts;
+    const step = (pts.length - 1) / (max - 1);
+    return Array.from({ length: max }, (_, i) => pts[Math.round(i * step)]);
+  }
+  function setStatus(text, err) { const s = $("status"); s.textContent = text || ""; s.className = "status" + (err ? " err" : ""); }
+
+  // ---------- Banco compartilhado (Supabase) ----------
+  const api = (path, opts = {}) => fetch(CFG.SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/" + path, {
+    ...opts,
+    headers: { apikey: CFG.SUPABASE_ANON_KEY, Authorization: "Bearer " + CFG.SUPABASE_ANON_KEY, "Content-Type": "application/json", ...(opts.headers || {}) }
+  });
+
+  async function pull() {
+    if (!REMOTE) return;
+    try {
+      const r = await api("trechos?select=*&order=criado_em.desc&limit=2000");
+      if (!r.ok) throw new Error(r.status);
+      const remote = await r.json();
+      const ids = new Set(remote.map((t) => t.id));
+      const unsynced = trechos.filter((t) => t._pendente && !ids.has(t.id));
+      trechos = [...unsynced, ...remote];
+      store.set(KEY_TRECHOS, trechos);
+      drawTrechos();
+      renderList();
+    } catch (e) { /* sem internet: segue com o que tem no celular */ }
+  }
+
+  async function push() {
+    if (!REMOTE) return;
+    const pend = trechos.filter((t) => t._pendente);
+    for (const t of pend) {
+      const { _pendente, ...row } = t;
+      try {
+        const r = await api("trechos", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(row) });
+        if (r.ok || r.status === 409) { t._pendente = false; }
+      } catch (e) { break; }
+    }
+    store.set(KEY_TRECHOS, trechos);
+    renderList();
+  }
+
+  // ---------- Desenho ----------
+  function drawTrechos() {
+    trechosLayer.clearLayers();
+    for (const t of trechos) {
+      if (!Array.isArray(t.pontos) || t.pontos.length < 2) continue;
+      const cor = COLORS[t.tipo] || COLORS.permitida;
+      L.polyline(t.pontos, { color: "#0B1622", weight: 11, opacity: 0.8 }).addTo(trechosLayer);
+      const line = L.polyline(t.pontos, { color: cor, weight: 7, opacity: 0.95, dashArray: t.tipo === "proibida" ? null : "14 10" }).addTo(trechosLayer);
+      line.bindPopup(`<b>${NOMES[t.tipo] || "Trecho"}</b> · ${fmtDist(t.extensao_m || 0)}<br>${esc(t.rodovia || "")}${t.km ? " km " + esc(t.km) : ""}${t.obs ? "<br>" + esc(t.obs) : ""}<br><small>${esc(t.autor || "")} ${t.criado_em ? new Date(t.criado_em).toLocaleDateString("pt-BR") : ""}</small>`);
+    }
+  }
+
+  function renderList() {
+    const el = $("list");
+    $("sync-note").textContent = REMOTE
+      ? (trechos.some((t) => t._pendente) ? "Alguns trechos ainda não foram enviados. Eles sobem quando houver internet." : "Sincronizado com a equipe.")
+      : "Modo só neste celular: preencha o config.js para compartilhar com a equipe.";
+    if (!trechos.length) { el.innerHTML = '<p class="note">Nenhum trecho ainda. Toque em "Começou a reta" quando a faixa ficar tracejada.</p>'; return; }
+    el.innerHTML = trechos.slice(0, 300).map((t) => `
+      <button class="item" type="button" data-id="${esc(t.id)}">
+        <span><b>${esc(t.rodovia || "Rodovia não informada")}${t.km ? " · km " + esc(t.km) : ""}</b><small>${fmtDist(t.extensao_m || 0)} · ${esc(t.autor || "sem nome")} · ${t.criado_em ? new Date(t.criado_em).toLocaleDateString("pt-BR") : ""}${t._pendente ? " · não enviado" : ""}</small></span>
+        <span class="pill ${esc(t.tipo)}">${NOMES[t.tipo] || ""}</span>
+      </button>`).join("");
+  }
+
+  // ---------- GPS ----------
+  function onPos(p) {
+    const c = p.coords;
+    const here = [c.latitude, c.longitude];
+    $("gps-dot").classList.toggle("ok", c.accuracy <= MIN_ACC);
+
+    if (!carMarker) {
+      carMarker = L.marker(here, { icon: carIcon, interactive: false, zIndexOffset: 1000 }).addTo(map);
+      accCircle = L.circle(here, { radius: c.accuracy, color: "#4DB2FF", weight: 1, fillOpacity: 0.08, interactive: false }).addTo(map);
+      map.setView(here, 17);
+      $("rec").disabled = false;
+    } else {
+      carMarker.setLatLng(here);
+      accCircle.setLatLng(here).setRadius(c.accuracy);
+    }
+
+    let kmh = c.speed != null && c.speed >= 0 ? c.speed * 3.6 : null;
+    if (kmh == null && lastPos) {
+      const dt = (p.timestamp - lastPos.t) / 1000;
+      if (dt > 0.5) kmh = dist(lastPos.ll, here) / dt * 3.6;
+    }
+    $("speed").textContent = kmh == null ? "–" : Math.round(kmh);
+
+    let heading = c.heading;
+    if ((heading == null || Number.isNaN(heading)) && lastPos && dist(lastPos.ll, here) > 8) {
+      const y = Math.sin(rad(here[1] - lastPos.ll[1])) * Math.cos(rad(here[0]));
+      const x = Math.cos(rad(lastPos.ll[0])) * Math.sin(rad(here[0])) - Math.sin(rad(lastPos.ll[0])) * Math.cos(rad(here[0])) * Math.cos(rad(here[1] - lastPos.ll[1]));
+      heading = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+    const car = document.getElementById("car");
+    if (car && heading != null && !Number.isNaN(heading)) car.style.transform = `rotate(${heading}deg)`;
+
+    lastPos = { ll: here, t: p.timestamp };
+    pos = here;
+
+    if (follow) map.panTo(here, { animate: true, duration: 0.5 });
+
+    if (recording && c.accuracy <= MIN_ACC) {
+      const prev = recPoints[recPoints.length - 1];
+      if (!prev || dist(prev, here) >= MIN_STEP) {
+        recPoints.push([+here[0].toFixed(6), +here[1].toFixed(6)]);
+        recLine.setLatLngs(recPoints);
+      }
+    }
+    updateTop(c.accuracy);
+  }
+
+  function onErr(e) {
+    const msgs = {
+      1: "Acesso à localização negado. Libere nas configurações do navegador e recarregue a página.",
+      2: "Não foi possível achar sua posição. Vá para um lugar aberto.",
+      3: "O GPS está demorando para responder. Aguarde um pouco."
+    };
+    $("top-title").textContent = "GPS indisponível";
+    $("top-sub").textContent = msgs[e.code] || "Erro no GPS";
+    setStatus(msgs[e.code] || "Erro no GPS", true);
+  }
+
+  function updateTop(acc) {
+    if (recording) {
+      $("top-title").textContent = `Gravando: ${NOMES[tipo]} · ${fmtDist(lineLength(recPoints))}`;
+      $("top-sub").textContent = `Toque em "Terminou a reta" quando a faixa mudar`;
+      return;
+    }
+    $("top-title").textContent = `GPS ativo · precisão ±${Math.round(acc)} m`;
+    const perto = pos ? trechos.filter((t) => Array.isArray(t.pontos) && t.pontos.some((p) => dist(p, pos) < 5000)).length : 0;
+    $("top-sub").textContent = perto ? `${perto} ${perto === 1 ? "trecho marcado" : "trechos marcados"} a até 5 km` : "Nenhum trecho marcado por perto";
+  }
+
+  async function keepAwake() {
+    try { if ("wakeLock" in navigator) { wakeLock = await navigator.wakeLock.request("screen"); } } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && watchId != null) keepAwake(); });
+
+  // ---------- Controles ----------
+  $("go").addEventListener("click", () => {
+    $("start").hidden = true;
+    if (!("geolocation" in navigator)) { onErr({ code: 2 }); return; }
+    watchId = navigator.geolocation.watchPosition(onPos, onErr, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+    keepAwake();
+    setTimeout(() => map.invalidateSize(), 100);
+  });
+
+  document.querySelectorAll(".types button").forEach((b) => b.addEventListener("click", () => {
+    if (recording) { setStatus("Termine a reta atual antes de trocar o tipo.", true); return; }
+    tipo = b.dataset.tipo;
+    document.querySelectorAll(".types button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    $("rec").textContent = tipo === "permitida" ? "Começou a reta" : tipo === "terceira" ? "Começou a 3ª faixa" : "Começou o trecho proibido";
+  }));
+
+  $("rec").addEventListener("click", () => {
+    if (!recording) {
+      if (!pos) { setStatus("Aguardando o GPS achar sua posição.", true); return; }
+      recording = true;
+      recPoints = [[+pos[0].toFixed(6), +pos[1].toFixed(6)]];
+      recLine = L.polyline(recPoints, { color: COLORS[tipo], weight: 8, opacity: 1 }).addTo(map);
+      $("rec").classList.add("on");
+      $("rec").innerHTML = '<span class="live" aria-hidden="true"></span>Terminou a reta';
+      follow = true; $("recenter").classList.add("active");
+      setStatus("Gravando o trecho pelo GPS.");
+      updateTop(0);
+      return;
+    }
+    recording = false;
+    $("rec").classList.remove("on");
+    $("rec").textContent = tipo === "permitida" ? "Começou a reta" : tipo === "terceira" ? "Começou a 3ª faixa" : "Começou o trecho proibido";
+    if (pos) { const last = recPoints[recPoints.length - 1]; if (!last || dist(last, pos) > 3) recPoints.push([+pos[0].toFixed(6), +pos[1].toFixed(6)]); }
+    const len = lineLength(recPoints);
+    if (recPoints.length < 2 || len < MIN_TRECHO) {
+      map.removeLayer(recLine); recLine = null;
+      setStatus(`Trecho muito curto (${fmtDist(len)}). Não foi salvo.`, true);
+      return;
+    }
+    pendingTrecho = { tipo, pontos: thin(recPoints), extensao_m: Math.round(len) };
+    $("save-summary").textContent = `${NOMES[tipo]} · ${fmtDist(len)} gravados pelo GPS.`;
+    $("save-sheet").hidden = false;
+    setStatus("");
+  });
+
+  $("s-discard").addEventListener("click", () => {
+    pendingTrecho = null;
+    if (recLine) { map.removeLayer(recLine); recLine = null; }
+    $("save-sheet").hidden = true;
+    setStatus("Trecho descartado.");
+  });
+
+  $("save-form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!pendingTrecho) return;
+    const t = {
+      id: uuid(),
+      ...pendingTrecho,
+      rodovia: $("s-rodovia").value.trim().toUpperCase().slice(0, 30) || null,
+      km: $("s-km").value.trim().replace(",", ".").slice(0, 10) || null,
+      obs: $("s-obs").value.trim().slice(0, 500) || null,
+      autor: store.get(KEY_NOME, "") || null,
+      criado_em: new Date().toISOString(),
+      _pendente: REMOTE
+    };
+    trechos.unshift(t);
+    store.set(KEY_TRECHOS, trechos);
+    if (recLine) { map.removeLayer(recLine); recLine = null; }
+    pendingTrecho = null;
+    $("save-sheet").hidden = true;
+    $("s-km").value = ""; $("s-obs").value = "";
+    drawTrechos(); renderList();
+    setStatus(`Trecho salvo: ${NOMES[t.tipo]}, ${fmtDist(t.extensao_m)}.`);
+    push();
+  });
+
+  map.on("dragstart", () => { follow = false; $("recenter").classList.remove("active"); });
+  $("recenter").addEventListener("click", () => {
+    follow = true; $("recenter").classList.add("active");
+    if (pos) map.setView(pos, Math.max(map.getZoom(), 16));
+  });
+
+  $("open-list").addEventListener("click", () => { renderList(); $("list-sheet").hidden = false; pull(); });
+  $("close-list").addEventListener("click", () => { $("list-sheet").hidden = true; });
+  $("list-sheet").addEventListener("click", (ev) => { if (ev.target === $("list-sheet")) $("list-sheet").hidden = true; });
+  $("list").addEventListener("click", (ev) => {
+    const b = ev.target.closest(".item"); if (!b) return;
+    const t = trechos.find((x) => x.id === b.dataset.id);
+    if (!t || !Array.isArray(t.pontos) || t.pontos.length < 2) return;
+    follow = false; $("recenter").classList.remove("active");
+    $("list-sheet").hidden = true;
+    map.fitBounds(L.latLngBounds(t.pontos), { padding: [60, 60] });
+  });
+
+  $("nome").value = store.get(KEY_NOME, "");
+  $("nome").addEventListener("input", () => store.set(KEY_NOME, $("nome").value.trim().slice(0, 40)));
+
+  $("export").addEventListener("click", () => {
+    const head = ["id", "tipo", "rodovia", "km", "extensao_m", "inicio_lat", "inicio_lng", "fim_lat", "fim_lng", "autor", "observacao", "criado_em"];
+    const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rows = trechos.map((t) => {
+      const a = (t.pontos || [])[0] || [], z = (t.pontos || []).slice(-1)[0] || [];
+      return [t.id, t.tipo, t.rodovia, t.km, t.extensao_m, a[0], a[1], z[0], z[1], t.autor, t.obs, t.criado_em].map(q).join(",");
+    });
+    const blob = new Blob(["﻿" + [head.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "trechos-ultrapassagem.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+
+  // ---------- Início ----------
+  drawTrechos();
+  renderList();
+  pull().then(push);
+  setInterval(() => { pull().then(push); }, 60000);
+  window.addEventListener("online", () => pull().then(push));
+})();
+</script>
+</body>
+</html>
