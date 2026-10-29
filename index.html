@@ -53,19 +53,54 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .alert .info span { font-size: 15px; font-weight: 700 }
 .alert.over { background: var(--rec); color: #1A0606 }
 
-.chip {
-  background: #13263A; border: 2px solid var(--ok); color: #BFE0FF; border-radius: 14px; padding: 10px 14px; font-size: 15px; font-weight: 700; display: flex; gap: 10px; align-items: center }
+.chip { background: #13263A; border: 2px solid var(--ok); color: #BFE0FF; border-radius: 16px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px }
 .chip[hidden] { display: none }
+.chip { flex-direction: row !important; align-items: center; pointer-events: auto }
+.chip .pp-main { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0 }
+.chip .pp-mute { width: 44px; height: 44px; border-radius: 50%; border: none; background: rgba(255,255,255,0.12); color: inherit; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer }
+.chip .pp-mute.off { color: var(--muted); background: rgba(255,255,255,0.05) }
+.sheet label.check { flex-direction: row; align-items: center; gap: 10px; font-size: 15px; color: var(--fg); min-height: 44px }
+.sheet label.check input { width: 22px; height: 22px; min-height: 0; accent-color: var(--ok) }
+.chip .pp-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px }
+.chip .pp-label { font-size: 14px; font-weight: 700 }
+.chip .pp-val { font-family: var(--mono); font-size: 24px; line-height: 1; color: #fff; white-space: nowrap; font-variant-numeric: tabular-nums }
+.chip .pp-sub { font-size: 13px; opacity: 0.85 }
+.chip .pp-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.15); overflow: hidden }
+.chip .pp-bar span { display: block; height: 100%; background: var(--ok); border-radius: 4px; transition: width .5s }
+.chip.next { background: var(--surface); }
 .chip.proibida { background: var(--surface); border-color: var(--no); color: var(--fg) }
+.chip.proibida .pp-bar span { background: var(--no) }
 .chip.terceira { background: #12291E; border-color: var(--third); color: #BDF2D6 }
+.chip.terceira .pp-bar span { background: var(--third) }
+.chip.next.terceira { background: var(--surface) }
+.chip.none { background: rgba(26,33,41,0.85); border-color: var(--surface-2); color: var(--muted); padding: 8px 14px }
 
 .speed { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 12px); bottom: calc(env(safe-area-inset-bottom, 0px) + 272px); z-index: 500;
   width: 76px; height: 76px; border-radius: 50%; background: var(--surface); border: 3px solid var(--surface-2); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,0.4) }
 .speed b { font-family: var(--mono); font-size: 28px; line-height: 1 }
 .speed span { font-size: 11px; color: var(--muted) }
 .speed.over { border-color: var(--rec) } .speed.over b { color: #FF8A8A }
-.fabs { position: fixed; right: calc(env(safe-area-inset-right, 0px) + 12px); bottom: calc(env(safe-area-inset-bottom, 0px) + 272px); z-index: 500; display: flex; flex-direction: column; gap: 12px }
-.fab { width: 56px; height: 56px; box-shadow: 0 6px 18px rgba(0,0,0,0.4); background: var(--surface) }
+.fabs { position: fixed; right: calc(env(safe-area-inset-right, 0px) + 12px); bottom: calc(env(safe-area-inset-bottom, 0px) + 272px); z-index: 500; display: flex; flex-direction: column; gap: 10px }
+.fab.hz { background: #FFB020; color: #1A1208 }
+.hazard { background: #2B2410; border: 2px solid #FFB020; color: #FFE3A3; border-radius: 16px; padding: 10px 14px; display: flex; gap: 12px; align-items: center }
+.hazard[hidden] { display: none }
+.hazard .hz-ico { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
+.hazard .hz-txt { display: flex; flex-direction: column; min-width: 0 }
+.hazard .hz-txt b { font-size: 17px; color: #fff }
+.hazard .hz-txt span { font-size: 13px; opacity: 0.85 }
+.hazard.forte { background: #3A1C1E; border-color: #FF5A5A; color: #FFC9C9 }
+.hz-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.hz-grid button { font: inherit; font-size: 15px; font-weight: 700; min-height: 64px; border-radius: 14px; border: 2px solid var(--surface-2); background: var(--bg); color: var(--fg); display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: pointer; text-align: left }
+.hz-grid .hz-ico { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
+.places { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.places .place { font: inherit; border: 2px solid var(--surface-2); background: var(--bg); color: var(--fg); border-radius: 14px; min-height: 64px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; min-width: 0 }
+.places .place.active { border-color: var(--ok) }
+.places .place svg { flex-shrink: 0; color: var(--ok) }
+.places .place span { display: flex; flex-direction: column; min-width: 0 }
+.places .place b { font-size: 16px }
+.places .place small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.places .edit { grid-column: span 2; font: inherit; font-size: 13px; color: var(--ok); background: none; border: none; text-align: right; padding: 0; min-height: 32px; cursor: pointer }
+.fab { width: 52px; height: 52px; box-shadow: 0 6px 18px rgba(0,0,0,0.4); background: var(--surface) }
 .fab.active { color: var(--ok) }
 .fab.radar { background: var(--radar); color: var(--radar-dark) }
 
@@ -155,11 +190,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   <div class="lim" id="alert-lim">80</div>
   <div class="info"><small id="alert-kind">RADAR</small><b id="alert-dist">500 m</b><span id="alert-msg">Limite 80 km/h</span></div>
 </div>
+<div class="hazard" id="hazard" hidden role="status"></div>
 <div class="chip" id="chip" hidden aria-live="polite"></div>
 </div>
 
 <div class="speed" id="speed-box"><b id="speed">–</b><span>km/h</span></div>
 <div class="fabs">
+  <button class="icon-btn fab hz" id="hazard-btn" aria-label="Avisar outros motoristas">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.3"/></svg>
+  </button>
   <button class="icon-btn fab" id="poi-btn" aria-label="Postos e serviços">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4"/><path d="M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>
   </button>
@@ -192,6 +231,16 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
     <button class="btn ghost" id="pick-cancel" type="button">Cancelar</button>
     <button class="btn ghost" id="pick-undo" type="button">Desfazer</button>
     <button class="btn" id="pick-done" type="button" disabled>Concluir</button>
+  </div>
+</div>
+
+<div class="panel" id="panel-results" hidden>
+  <p class="mode-title" id="res-title"></p>
+  <p class="note" id="res-near"></p>
+  <button class="btn" id="res-go" type="button">Ir até o mais perto</button>
+  <div class="secondary">
+    <button class="sbtn" id="res-list" type="button">Ver lista</button>
+    <button class="sbtn" id="res-close" type="button">Fechar</button>
   </div>
 </div>
 
@@ -246,11 +295,32 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       <h2>Para onde?</h2>
       <button class="icon-btn" id="dest-close" type="button" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-    <label for="dest-q">Cidade, endereço ou lugar<input id="dest-q" type="search" placeholder="Ex.: Caxias do Sul" autocomplete="off" enterkeyhint="search"></label>
+    <div class="places" id="places"></div>
+    <div id="place-setup" hidden>
+      <p class="note" id="place-help"></p>
+      <div class="secondary" style="margin-top:8px">
+        <button class="sbtn" type="button" id="place-here">Usar minha localização atual</button>
+        <button class="sbtn" type="button" id="place-cancel">Cancelar</button>
+      </div>
+      <button class="sbtn" type="button" id="place-delete" style="width:100%;margin-top:8px" hidden>Apagar endereço salvo</button>
+    </div>
+    <label for="dest-q">Cidade, endereço ou lugar<input id="dest-q" type="search" placeholder="Ex.: posto, restaurante ou Caxias do Sul" autocomplete="off" enterkeyhint="search"></label>
     <button class="btn" type="submit">Buscar</button>
     <p class="note" id="dest-msg" role="status"></p>
     <div class="list" id="dest-results"></div>
   </form>
+</div>
+
+<div class="sheet" id="hazard-sheet" hidden>
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h2>Avisar os motoristas</h2>
+      <button class="icon-btn" id="hazard-close" type="button" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p class="note">O alerta fica no ponto onde você está agora, valendo para o sentido em que o carro anda.</p>
+    <div class="hz-grid" id="hazard-types"></div>
+    <p class="note" id="hazard-msg" role="status"></p>
+  </div>
 </div>
 
 <div class="sheet" id="poi-sheet" hidden>
@@ -279,6 +349,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
       <button type="button" role="tab" id="tab-radares" aria-selected="false">Radares</button>
     </div>
     <div class="list" id="list"></div>
+    <label class="check" for="pass-voice"><input type="checkbox" id="pass-voice"> Falar os avisos das retas liberadas e proibidas</label>
     <label for="nome">Seu nome (aparece nas marcações)<input id="nome" placeholder="Ex.: João" autocomplete="name"></label>
     <button class="btn ghost" type="button" id="export">Baixar planilha (CSV)</button>
   </div>
@@ -392,6 +463,14 @@ window.APP_CONFIG = {
 
   // ---------- Ultrapassagem ----------
   // Situação em relação aos trechos: dentro de um trecho (e quanto falta) ou se aproximando de um liberado.
+  // Direção em que o trecho começa (do primeiro ponto até ~100 m adiante), para comparar com a do carro.
+  function startBearing(pts) {
+    let acc = 0;
+    for (let i = 1; i < pts.length; i++) { acc += dist(pts[i - 1], pts[i]); if (acc >= 100) return bearing(pts[0], pts[i]); }
+    return bearing(pts[0], pts[pts.length - 1]);
+  }
+  // Cada trecho vale só no sentido em que foi marcado: do primeiro ao último ponto.
+  // O outro lado da pista pode ter outra faixa, então precisa de uma marcação própria.
   function passingState(pos, heading, trechos) {
     if (heading == null) return null;
     let inside = null, next = null;
@@ -402,23 +481,52 @@ window.APP_CONFIG = {
       const seg = pts[pr.seg], segPrev = pts[pr.seg - 1];
       const segBearing = bearing(segPrev, seg);
       const forward = angleDiff(segBearing, heading) <= 45;
-      const backward = angleDiff((segBearing + 180) % 360, heading) <= 45;
-      if (pr.d <= 30 && (forward || backward)) {
-        const left = forward ? pr.total - pr.along : pr.along;
+      if (pr.d <= 30 && forward) {
+        const left = pr.total - pr.along;
         if (!inside || left > inside.left) inside = { trecho: t, left };
         continue;
       }
       if (t.tipo === "proibida") continue;
-      // Entrada do trecho: a ponta que está à frente e de onde a linha se afasta do carro.
-      for (const [entry, other] of [[pts[0], pts[pts.length - 1]], [pts[pts.length - 1], pts[0]]]) {
-        const d = dist(pos, entry);
-        if (d > 600) continue;
-        if (angleDiff(bearing(pos, entry), heading) > 35) continue;
-        if (dist(pos, other) <= d) continue;
-        if (!next || d < next.d) next = { trecho: t, d };
-      }
+      // Entrada do trecho: sempre o primeiro ponto, que precisa estar à frente, com a linha se afastando do carro.
+      const entry = pts[0], other = pts[pts.length - 1];
+      const d = dist(pos, entry);
+      if (d > 600) continue;
+      if (angleDiff(bearing(pos, entry), heading) > 35) continue;
+      if (dist(pos, other) <= d) continue;
+      if (angleDiff(startBearing(pts), heading) > 70) continue;   // começa no sentido contrário ao do carro
+      if (!next || d < next.d) next = { trecho: t, d };
     }
     return { inside, next };
+  }
+
+  // Próximas retas liberadas à frente (até `maxD` metros), da mais perto para a mais longe.
+  // Com rota ativa, mede pela estrada (ao longo da rota); sem rota, em linha reta na direção em que o carro anda.
+  function passingAhead(pos, heading, trechos, route, maxD = 10000) {
+    const out = [];
+    const cands = trechos.filter((t) => t.tipo !== "proibida" && Array.isArray(t.pontos) && t.pontos.length >= 2);
+    if (route && route.line && route.line.length >= 2) {
+      const cur = projectOnLine(pos, route.line).along;
+      for (const t of cands) {
+        const a = projectOnLine(t.pontos[0], route.line), b = projectOnLine(t.pontos[t.pontos.length - 1], route.line);
+        if (a.d > 40 || b.d > 40) continue;                // trecho fora da rota
+        if (b.along <= a.along + 5) continue;               // marcado no sentido contrário ao da rota
+        const entry = a.along, exit = b.along;
+        const d = entry - cur;
+        if (d > 5 && d <= maxD) out.push({ trecho: t, d, length: exit - entry, viaRoute: true });
+      }
+    } else if (heading != null) {
+      for (const t of cands) {
+        const pts = t.pontos;
+        const entry = pts[0], other = pts[pts.length - 1];
+        const d = dist(pos, entry);
+        if (d < 30 || d > maxD) continue;
+        if (angleDiff(bearing(pos, entry), heading) > 40) continue;
+        if (dist(pos, other) <= d) continue;
+        if (d < 2000 && angleDiff(startBearing(pts), heading) > 70) continue;   // é do outro lado da pista
+        out.push({ trecho: t, d, length: lineLength(pts), viaRoute: false });
+      }
+    }
+    return out.sort((x, y) => x.d - y.d).slice(0, 3);
   }
 
   // ---------- Navegação até o destino ----------
@@ -467,7 +575,7 @@ window.APP_CONFIG = {
     return { off: pr.d, along: pr.along, next, idx, toNext: next ? next.along - pr.along : remaining, remaining };
   }
 
-  const api = { dist, bearing, angleDiff, lineLength, projectOnLine, radarAhead, radarAnnouncement, resetFar, passingState, STAGES, maneuverText, prepareRoute, routeProgress };
+  const api = { dist, bearing, angleDiff, lineLength, projectOnLine, radarAhead, radarAnnouncement, resetFar, passingState, passingAhead, STAGES, maneuverText, prepareRoute, routeProgress };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Geo = api;
 })(typeof window !== "undefined" ? window : globalThis);
@@ -612,6 +720,21 @@ window.APP_CONFIG = {
       syncError = false;
       redraw();
     } catch (e) { syncError = true; renderList(); }
+    await pullAlertas();
+  }
+  // Alertas vêm separados: se a tabela ainda não existir no banco, o resto do app continua funcionando.
+  let alertasOk = true;
+  async function pullAlertas() {
+    try {
+      const r = await api(`alertas?select=*&expira_em=gt.${encodeURIComponent(new Date().toISOString())}&order=criado_em.desc&limit=2000`);
+      if (!r.ok) { alertasOk = false; return; }
+      const remote = await r.json();
+      const ids = new Set(remote.map((x) => x.id));
+      alertas = [...alertas.filter((x) => x._pendente && !ids.has(x.id)), ...remote];
+      alertasOk = true;
+      store.set(K_ALERTAS, alertas);
+      drawAlertas();
+    } catch (e) { /* sem internet: segue com o que tem */ }
   }
   async function push() {
     if (!REMOTE) return;
@@ -626,6 +749,8 @@ window.APP_CONFIG = {
     };
     await send("trechos", trechos.filter((t) => t._pendente));
     await send("radares", radares.filter((t) => t._pendente));
+    await send("alertas", alertas.filter((t) => t._pendente));
+    store.set(K_ALERTAS, alertas);
     for (const [id, mv] of Object.entries(meusVotos)) {
       if (!mv.pendente) continue;
       try {
@@ -640,10 +765,11 @@ window.APP_CONFIG = {
   const sync = () => pull().then(push);
 
   // ---------- Desenho ----------
-  function votesHtml(id) {
+  function votesHtml(id, rot) {
+    const r = rot || { sim: "Confirmo", nao: "Não confere", naoTxt: "não confere" };
     const c = counts(id), meu = meusVotos[id] && meusVotos[id].voto;
-    return `<div class="sub">${c.sim} ${c.sim === 1 ? "confirmação" : "confirmações"}${c.nao ? ` · ${c.nao} ${c.nao === 1 ? "diz" : "dizem"} que não confere` : ""}</div>
-      <div class="votes"><button type="button" data-vote="sim" data-id="${esc(id)}" class="${meu === "sim" ? "on" : ""}">Confirmo</button><button type="button" data-vote="nao" data-id="${esc(id)}" class="${meu === "nao" ? "on" : ""}">Não confere</button></div>`;
+    return `<div class="sub">${c.sim} ${c.sim === 1 ? "confirmação" : "confirmações"}${c.nao ? ` · ${c.nao} ${c.nao === 1 ? "diz" : "dizem"} que ${r.naoTxt}` : ""}</div>
+      <div class="votes"><button type="button" data-vote="sim" data-id="${esc(id)}" class="${meu === "sim" ? "on" : ""}">${r.sim}</button><button type="button" data-vote="nao" data-id="${esc(id)}" class="${meu === "nao" ? "on" : ""}">${r.nao}</button></div>`;
   }
   function drawTrechos() {
     trechosLayer.clearLayers();
@@ -652,8 +778,16 @@ window.APP_CONFIG = {
       const faded = disputed(t.id), cor = COLORS[t.tipo] || COLORS.permitida;
       L.polyline(t.pontos, { color: "#0B1622", weight: 12, opacity: faded ? 0.3 : 0.8 }).addTo(trechosLayer);
       const line = L.polyline(t.pontos, { color: cor, weight: 8, opacity: faded ? 0.35 : 0.95, dashArray: t.tipo === "proibida" ? null : "14 10" }).addTo(trechosLayer);
+      // Seta no meio do trecho mostrando o sentido em que ele vale
+      const mid = G.lineLength(t.pontos) / 2;
+      let acc = 0, ai = 1;
+      for (; ai < t.pontos.length - 1; ai++) { const sl = G.dist(t.pontos[ai - 1], t.pontos[ai]); if (acc + sl >= mid) break; acc += sl; }
+      const a0 = t.pontos[ai - 1], a1 = t.pontos[ai], f = Math.max(0, Math.min(1, (mid - acc) / Math.max(1, G.dist(a0, a1))));
+      L.marker([a0[0] + (a1[0] - a0[0]) * f, a0[1] + (a1[1] - a0[1]) * f], { interactive: false, icon: L.divIcon({ className: "", iconSize: [26, 26], iconAnchor: [13, 13],
+        html: `<div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;transform:rotate(${Math.round(G.bearing(a0, a1))}deg);opacity:${faded ? 0.4 : 1}"><svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#0B1622"/><path d="M12 5l6 10h-12z" fill="${cor}"/></svg></div>` }) }).addTo(trechosLayer);
       line.bindPopup(() => `<div class="pop"><b>${NOMES[t.tipo] || "Trecho"} · ${fmtDist(t.extensao_m || 0)}</b>
         <div class="sub">${esc(t.rodovia || "Rodovia não informada")}${t.km ? " · km " + esc(t.km) : ""}</div>
+        <div class="sub">Vale só no sentido da seta. O outro lado da pista precisa de marcação própria.</div>
         ${t.obs ? `<div>${esc(t.obs)}</div>` : ""}<div class="sub">Por ${esc(t.autor || "alguém da equipe")} em ${fmtDate(t.criado_em)}</div>${votesHtml(t.id)}</div>`);
     }
   }
@@ -771,7 +905,7 @@ window.APP_CONFIG = {
     if (force !== true && poiDrawn && poiDrawn.z === z && poiDrawn.key === key && G.dist(poiDrawn.center, center) < 500) return;
     poiDrawn = { center, z, key };
     poiLayer.clearLayers();
-    if (z < 12) return;
+    if (z < 12 || resultsOn) return;
     const near = pois.items.filter((p) => poiOn[p.cat]).map((p) => ({ p, d: G.dist(center, [p.lat, p.lng]) }))
       .filter((x) => x.d < 6000).sort((a, b) => a.d - b.d).slice(0, 200);
     for (const { p } of near) {
@@ -814,12 +948,78 @@ window.APP_CONFIG = {
     const go = ev.target.closest("[data-go]");
     if (go) goToPoi(go.dataset.go);
   });
-  function redraw() { drawTrechos(); drawRadares(); renderList(); }
+  function redraw() { drawTrechos(); drawRadares(); drawAlertas(); renderList(); }
+
+  // ---------- Alertas para os motoristas (buraco, trânsito, acidente...) ----------
+  const K_ALERTAS = "teste-ultrapassagem:alertas";
+  const HZ = {
+    buraco: { nome: "Buraco", voz: "buraco", horas: 24 * 30, cor: "#FFB020", g: '<ellipse cx="12" cy="14" rx="8" ry="4"/><path d="M7 13c1.5 1 8.5 1 10 0"/>' },
+    transito: { nome: "Trânsito intenso", voz: "trânsito intenso", horas: 1, cor: "#FF7A45", g: '<path d="M5 17l1.6-5.2A2 2 0 0 1 8.5 10.4h7a2 2 0 0 1 1.9 1.4L19 17"/><path d="M4 17h16v3H4z"/><path d="M9 6h6"/>' },
+    acidente: { nome: "Acidente", voz: "acidente", horas: 2, cor: "#FF5A5A", g: '<path d="M12 4v9M12 17.5v.5"/><circle cx="12" cy="12" r="9.5"/>' },
+    veiculo: { nome: "Veículo parado", voz: "veículo parado na pista", horas: 2, cor: "#FFB020", g: '<path d="M5 15l1.6-5.2A2 2 0 0 1 8.5 8.4h7a2 2 0 0 1 1.9 1.4L19 15"/><path d="M4 15h16v3H4z"/><circle cx="8" cy="18" r="1"/><circle cx="16" cy="18" r="1"/>' },
+    obra: { nome: "Obra na pista", voz: "obra na pista", horas: 24 * 14, cor: "#FFB020", g: '<path d="M10 4h4l4.5 15h-13z"/><path d="M8 13h8M4 19h16"/>' },
+    animal: { nome: "Animal na pista", voz: "animal na pista", horas: 1, cor: "#FFB020", g: '<circle cx="7.5" cy="9" r="1.7"/><circle cx="16.5" cy="9" r="1.7"/><circle cx="12" cy="6.5" r="1.7"/><path d="M8 17.5c0-3 2-5 4-5s4 2 4 5c0 1.6-2 1.8-4 1.8s-4-.2-4-1.8z"/>' },
+    objeto: { nome: "Objeto na pista", voz: "objeto na pista", horas: 3, cor: "#FFB020", g: '<rect x="5" y="9" width="14" height="10" rx="1.5"/><path d="M5 13h14M10 9V6h4v3"/>' }
+  };
+  const HZ_VOTOS = { sim: "Ainda está lá", nao: "Não está mais", naoTxt: "não está mais lá" };
+  let alertas = store.get(K_ALERTAS, []);
+  const alertasLayer = L.layerGroup().addTo(map);
+  const hzSvg = (tipo, size, stroke) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${(HZ[tipo] || HZ.objeto).g}</svg>`;
+  const hzIcons = {};
+  const hzIcon = (tipo) => hzIcons[tipo] || (hzIcons[tipo] = L.divIcon({ className: "", iconSize: [32, 32], iconAnchor: [16, 16],
+    html: `<div style="width:32px;height:32px;border-radius:9px;background:${(HZ[tipo] || HZ.objeto).cor};border:2px solid #141B22;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.4)">${hzSvg(tipo, 20, "#141B22")}</div>` }));
+  const haQuanto = (iso) => { const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 1 ? "agora" : m < 60 ? `há ${m} min` : m < 48 * 60 ? `há ${Math.round(m / 60)} h` : `há ${Math.round(m / 1440)} dias`; };
+  const alertasAtivos = () => alertas.filter((a) => HZ[a.tipo] && new Date(a.expira_em).getTime() > Date.now() && !disputed(a.id));
+  function drawAlertas() {
+    alertasLayer.clearLayers();
+    for (const a of alertasAtivos()) {
+      L.marker([a.lat, a.lng], { icon: hzIcon(a.tipo), zIndexOffset: 700 }).addTo(alertasLayer).bindPopup(() => `<div class="pop"><b>${HZ[a.tipo].nome}</b>
+        <div class="sub">Avisado ${haQuanto(a.criado_em)}${a.autor ? " por " + esc(a.autor) : ""}${a.direcao == null ? " · vale para os dois sentidos" : ""}</div>${votesHtml(a.id, HZ_VOTOS)}</div>`);
+    }
+  }
+  function renderHazardSheet() {
+    $("hazard-types").innerHTML = Object.entries(HZ).map(([k, h]) => `<button type="button" data-hz="${k}"><span class="hz-ico" style="background:${h.cor}">${hzSvg(k, 22, "#141B22")}</span>${h.nome}</button>`).join("");
+    $("hazard-msg").textContent = !pos ? "Aguardando o GPS achar sua posição." : (REMOTE && !alertasOk ? "O banco ainda não tem a tabela de alertas: o alerta fica só neste celular até ela ser criada." : "");
+  }
+  function createAlerta(tipo) {
+    if (!pos) { $("hazard-msg").textContent = "Aguardando o GPS achar sua posição."; return; }
+    const moving = kmh != null && kmh > 10 && heading != null;
+    const a = { id: uuid(), tipo, lat: +pos[0].toFixed(6), lng: +pos[1].toFixed(6), direcao: moving ? Math.round(heading) % 360 : null,
+      autor: store.get(K.nome, "") || null, criado_em: new Date().toISOString(), expira_em: new Date(Date.now() + HZ[tipo].horas * 3600 * 1000).toISOString(), _pendente: REMOTE };
+    alertas.unshift(a); store.set(K_ALERTAS, alertas);
+    meusVotos[a.id] = { voto: "sim", pendente: REMOTE }; store.set(K.meus, meusVotos);
+    hzAnnounced.add(a.id);
+    $("hazard-sheet").hidden = true;
+    drawAlertas();
+    setStatus(`Alerta enviado: ${HZ[tipo].nome}. Obrigado por avisar!`);
+    push();
+  }
+  $("hazard-btn").addEventListener("click", () => { renderHazardSheet(); $("hazard-sheet").hidden = false; });
+  $("hazard-close").addEventListener("click", () => { $("hazard-sheet").hidden = true; });
+  $("hazard-sheet").addEventListener("click", (ev) => {
+    if (ev.target === $("hazard-sheet")) { $("hazard-sheet").hidden = true; return; }
+    const b = ev.target.closest("[data-hz]"); if (b) createAlerta(b.dataset.hz);
+  });
+  // Aviso na tela e por voz quando há um alerta à frente, no mesmo sentido
+  const hzAnnounced = new Set();
+  function updateHazard() {
+    const ativos = alertasAtivos();
+    for (const id of [...hzAnnounced]) { const a = alertas.find((x) => x.id === id); if (!a || G.dist(pos, [a.lat, a.lng]) > 1500) hzAnnounced.delete(id); }
+    const hit = G.radarAhead(pos, heading, ativos);
+    const box = $("hazard");
+    if (!hit || hit.d > 800) { box.hidden = true; return; }
+    const a = hit.radar, h = HZ[a.tipo];
+    box.className = "hazard" + (a.tipo === "acidente" ? " forte" : "");
+    box.innerHTML = `<span class="hz-ico" style="background:${h.cor}">${hzSvg(a.tipo, 24, "#141B22")}</span><span class="hz-txt"><b>${h.nome} a ${fmtDist(hit.d)}</b><span>Avisado ${haQuanto(a.criado_em)}</span></span>`;
+    box.hidden = false;
+    if (!hzAnnounced.has(a.id) && hit.d <= 600) { hzAnnounced.add(a.id); beep(1); speak(`Atenção: ${h.voz} a ${voiceDist(hit.d)}.`); }
+  }
   map.on("popupopen", (e) => {
     const el = e.popup.getElement();
     if (!el) return;
     el.querySelectorAll("button[data-vote]").forEach((b) => b.addEventListener("click", () => { vote(b.dataset.id, b.dataset.vote); map.closePopup(); }));
     el.querySelectorAll("button[data-go]").forEach((b) => b.addEventListener("click", () => goToPoi(b.dataset.go)));
+    el.querySelectorAll("button[data-res]").forEach((b) => b.addEventListener("click", () => goToResult(+b.dataset.res)));
   });
 
   function renderList() {
@@ -883,11 +1083,32 @@ window.APP_CONFIG = {
   }
   $("sound").addEventListener("click", () => { soundOn = !soundOn; store.set(K.som, soundOn); renderSound(); if (!soundOn) try { speechSynthesis.cancel(); } catch (e) {} });
 
+  // ---------- Voz das retas (liga/desliga só esses avisos) ----------
+  const K_VOZ_RETAS = "teste-ultrapassagem:voz-retas";
+  let passVoice = store.get(K_VOZ_RETAS, true);
+  const speakPass = (text) => { if (passVoice) speak(text); };
+  const MUTE_ON = '<path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>';
+  const MUTE_OFF = '<path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M16 9l6 6M22 9l-6 6"/>';
+  function setPanel(html) {
+    $("chip").innerHTML = `<div class="pp-main">${html}</div><button type="button" class="pp-mute${passVoice ? "" : " off"}" data-pp-mute aria-pressed="${passVoice}" aria-label="${passVoice ? "Voz dos avisos de retas ligada" : "Voz dos avisos de retas desligada"}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${passVoice ? MUTE_ON : MUTE_OFF}</svg></button>`;
+  }
+  function setPassVoice(on) {
+    passVoice = on; store.set(K_VOZ_RETAS, on);
+    if ($("pass-voice")) $("pass-voice").checked = on;
+    const b = document.querySelector("[data-pp-mute]");
+    if (b) { b.classList.toggle("off", !on); b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", on ? "Voz dos avisos de retas ligada" : "Voz dos avisos de retas desligada"); b.querySelector("svg").innerHTML = on ? MUTE_ON : MUTE_OFF; }
+    setStatus(on ? "Voz dos avisos de retas ligada." : "Voz dos avisos de retas desligada. Radares e rota continuam falando.");
+  }
+  $("chip").addEventListener("click", (ev) => { if (ev.target.closest("[data-pp-mute]")) setPassVoice(!passVoice); });
+  $("pass-voice").checked = passVoice;
+  $("pass-voice").addEventListener("change", () => setPassVoice($("pass-voice").checked));
+
   // ---------- Alertas ----------
   const activeRadares = () => allRadares().filter((r) => !disputed(r.id));
   const activeTrechos = () => trechos.filter((t) => !disputed(t.id));
   function updateAlerts() {
     if (!pos) return;
+    updateHazard();
     // Radar
     G.resetFar(pos, allRadares(), fired);
     const hit = G.radarAhead(pos, heading, activeRadares());
@@ -908,25 +1129,37 @@ window.APP_CONFIG = {
 
     // Ultrapassagem
     const st = G.passingState(pos, heading, activeTrechos());
+    const ahead = G.passingAhead(pos, heading, activeTrechos(), nav ? nav.route : null);
     const chip = $("chip");
     chip.className = "chip";
+    const nomeReta = (t) => (t.tipo === "terceira" ? "3ª faixa" : "Reta liberada");
+    const depois = (list) => (list.length ? `<span class="pp-sub">Depois: ${list.map((x) => fmtDist(x.d)).join(" e ")}</span>` : "");
     if (st && st.inside) {
-      const t = st.inside.trecho, left = fmtDist(st.inside.left);
+      const t = st.inside.trecho, total = Math.max(1, G.lineLength(t.pontos)), left = Math.min(st.inside.left, total);
       chip.classList.add(t.tipo);
-      chip.textContent = t.tipo === "proibida" ? `Ultrapassagem proibida por mais ${left}` : t.tipo === "terceira" ? `3ª faixa · faltam ${left}` : `Ultrapassagem liberada · faltam ${left}`;
+      const titulo = t.tipo === "proibida" ? "Proibida por mais" : t.tipo === "terceira" ? "3ª faixa · faltam" : "Liberada · faltam";
+      const valor = fmtDist(left);
+      const proximas = ahead.filter((x) => x.trecho.id !== t.id);
+      setPanel(`<span class="pp-row"><span class="pp-label">${titulo}</span><b class="pp-val">${valor}</b></span>
+        <span class="pp-bar" aria-hidden="true"><span style="width:${Math.round(left / total * 100)}%"></span></span>${t.tipo === "proibida" && proximas.length ? `<span class="pp-sub">Próxima reta liberada em ${fmtDist(proximas[0].d)}</span>` : depois(proximas.slice(0, 2))}`);
       chip.hidden = false;
       const key = "in:" + t.id;
       if (!passAnnounced.has(key) && t.tipo !== "proibida" && st.inside.left > 150) {
         passAnnounced.add(key);
-        speak(t.tipo === "terceira" ? `Terceira faixa nos próximos ${voiceDist(st.inside.left)}.` : `Ultrapassagem liberada nos próximos ${voiceDist(st.inside.left)}.`);
+        speakPass(t.tipo === "terceira" ? `Terceira faixa nos próximos ${voiceDist(st.inside.left)}.` : `Ultrapassagem liberada nos próximos ${voiceDist(st.inside.left)}.`);
       }
-    } else if (st && st.next) {
-      const t = st.next.trecho;
-      chip.classList.add(t.tipo);
-      chip.textContent = `${t.tipo === "terceira" ? "3ª faixa" : "Reta liberada"} em ${fmtDist(st.next.d)}`;
+    } else if (ahead.length) {
+      const n = ahead[0], t = n.trecho;
+      chip.classList.add("next", t.tipo);
+      setPanel(`<span class="pp-row"><span class="pp-label">Próxima ${t.tipo === "terceira" ? "3ª faixa" : "reta liberada"}</span><b class="pp-val">${fmtDist(n.d)}</b></span>
+        <span class="pp-sub">${fmtDist(n.length)} de extensão${n.viaRoute ? " · pela rota" : ""}</span>${depois(ahead.slice(1, 3))}`);
       chip.hidden = false;
       const key = "next:" + t.id;
-      if (!passAnnounced.has(key) && st.next.d <= 300) { passAnnounced.add(key); speak(`${t.tipo === "terceira" ? "Terceira faixa" : "Reta liberada"} em ${voiceDist(st.next.d)}.`); }
+      if (!passAnnounced.has(key) && n.d <= 300) { passAnnounced.add(key); speakPass(`${nomeReta(t)} em ${voiceDist(n.d)}.`); }
+    } else if (pos && kmh != null && kmh > 10 && heading != null) {
+      chip.classList.add("none");
+      setPanel(`<span class="pp-label">Nenhuma reta liberada mapeada nos próximos 10 km</span>`);
+      chip.hidden = false;
     } else chip.hidden = true;
     // Libera avisos de trechos que ficaram longe
     for (const key of [...passAnnounced]) {
@@ -1146,7 +1379,7 @@ window.APP_CONFIG = {
     $("pick-line-row").querySelectorAll("#pick-undo, #pick-done").forEach((b) => (b.hidden = mode !== "line"));
     $("pick-line-row").style.gridTemplateColumns = mode === "line" ? "" : "1fr";
     $("pick-title").textContent = mode === "line" ? `Marcando: ${NOMES[tipo]}. Toque no início` : "Toque no local do radar";
-    $("pick-help").textContent = mode === "line" ? "Toque ao longo da estrada: no início, nas curvas e no fim. Depois toque em Concluir." : "Aproxime o mapa e toque exatamente onde fica o radar.";
+    $("pick-help").textContent = mode === "line" ? "Toque na ordem em que o carro anda: primeiro o início, depois as curvas e por último o fim. A reta vale só nesse sentido." : "Aproxime o mapa e toque exatamente onde fica o radar.";
     $("pick-done").disabled = true;
     if (pos && map.getZoom() < 15) map.setView(pos, 16);
   }
@@ -1162,7 +1395,7 @@ window.APP_CONFIG = {
     if (pickPoints.length > 1) L.polyline(pickPoints, { color: COLORS[tipo], weight: 8, opacity: 1 }).addTo(pickLayer);
     pickPoints.forEach((p) => L.circleMarker(p, { radius: 7, color: "#fff", weight: 2, fillColor: COLORS[tipo], fillOpacity: 1 }).addTo(pickLayer));
     $("pick-done").disabled = pickPoints.length < 2;
-    $("pick-title").textContent = pickPoints.length === 0 ? `Marcando: ${NOMES[tipo]}. Toque no início` : pickPoints.length === 1 ? "Agora toque no fim (ou numa curva)" : `${fmtDist(G.lineLength(pickPoints))} marcados`;
+    $("pick-title").textContent = pickPoints.length === 0 ? `Marcando: ${NOMES[tipo]}. Toque no início` : pickPoints.length === 1 ? "Agora toque no fim (ou numa curva), seguindo o sentido do carro" : `${fmtDist(G.lineLength(pickPoints))} marcados`;
   }
   map.on("click", (e) => {
     if (!pickMode) return;
@@ -1216,28 +1449,167 @@ window.APP_CONFIG = {
   // ---------- Destino ----------
   $("dest-btn").addEventListener("click", () => {
     if (nav) { endRoute("Rota encerrada."); return; }
-    $("dest-sheet").hidden = false; $("dest-msg").textContent = ""; setTimeout(() => $("dest-q").focus(), 50);
+    settingPlace = null; renderPlaces();
+    $("dest-sheet").hidden = false; $("dest-msg").textContent = "";
   });
   $("dest-close").addEventListener("click", () => { $("dest-sheet").hidden = true; });
   let destResults = [];
+  const norm = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const CAT_WORDS = {
+    combustivel: /^(posto|postos|gasolina|combustivel|combustiveis|etanol|alcool|diesel|abastecer|abastecimento|gnv)$/,
+    comida: /^(restaurante|restaurantes|lanche|lanches|lancheria|lanchonete|comida|comer|churrascaria|cafe|cafeteria|almoco|almocar|jantar|pizzaria)$/,
+    hospedagem: /^(hotel|hoteis|pousada|pousadas|motel|moteis|hospedagem|dormir|hostel)$/,
+    mecanica: /^(mecanica|mecanico|mecanicas|borracharia|borracharias|borracheiro|pneu|pneus|oficina|oficinas)$/
+  };
+  const STOP = /^(de|do|da|dos|das|mais|perto|proximo|proxima|proximos|aqui|um|uma|o|a|os|as|com|no|na|para|pra|em|e|tem|onde|qual)$/;
+  function detectCat(q) {
+    const words = norm(q).split(/[^a-z0-9]+/).filter(Boolean);
+    for (const [cat, re] of Object.entries(CAT_WORDS)) if (words.some((w) => re.test(w))) {
+      return { cat, rest: words.filter((w) => !re.test(w) && !STOP.test(w) && w.length > 1) };
+    }
+    return null;
+  }
+  async function ensurePois() {
+    if (!pos) return;
+    await loadPois();
+    for (let i = 0; i < 60 && poiLoading; i++) await new Promise((r) => setTimeout(r, 300));
+  }
+  function renderDestResults(title, showMapBtn) {
+    $("dest-msg").textContent = title;
+    $("dest-results").innerHTML = (showMapBtn ? `<button class="btn" type="button" data-map>Ver ${destResults.length > 1 ? "todos" : ""} no mapa (${destResults.length})</button>` : "") +
+      destResults.slice(0, 15).map((d, i) => `<button class="item" type="button" data-i="${i}"><span><b>${esc(d.short)}</b><small>${esc(d.name)}</small></span>${pos ? `<span class="pill permitida">${fmtDist(G.dist(pos, d.ll))}</span>` : ""}</button>`).join("");
+  }
   $("dest-form").addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const q = $("dest-q").value.trim();
     if (q.length < 3) { $("dest-msg").textContent = "Digite pelo menos 3 letras."; return; }
     $("dest-msg").textContent = "Buscando…"; $("dest-results").innerHTML = "";
+    const c = detectCat(q);
+    if (c) {
+      if (!pos) { $("dest-msg").textContent = "Aguarde o GPS achar sua posição para buscar o que está perto."; return; }
+      await ensurePois();
+      if (!pois.at) { $("dest-msg").textContent = "Não foi possível buscar os estabelecimentos agora. Confira a internet e tente de novo."; return; }
+      let items = pois.items.filter((p) => p.cat === c.cat);
+      let note = "";
+      if (c.rest.length) {
+        const byName = items.filter((p) => c.rest.every((w) => norm(p.nome + " " + p.marca).includes(w)));
+        if (byName.length) items = byName; else note = ` Nenhum com "${c.rest.join(" ")}" no nome; mostrando todos.`;
+      }
+      destResults = items.map((p) => ({ ll: [p.lat, p.lng], short: p.nome || p.tipo, name: p.tipo + (p.marca ? " · " + p.marca : "") + (p.horario === "24/7" ? " · 24 horas" : ""), cat: p.cat, poiId: p.id }))
+        .sort((a, b) => G.dist(pos, a.ll) - G.dist(pos, b.ll));
+      destCat = c.cat;
+      if (!destResults.length) { $("dest-msg").textContent = `Nenhum desse tipo cadastrado no OpenStreetMap num raio de uns 15 km.`; return; }
+      renderDestResults(`${destResults.length} ${CATS[c.cat].nome.toLowerCase()} perto de você.${note} Os mais perto:`, true);
+      return;
+    }
+    destCat = null;
     try {
-      let url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=br&accept-language=pt-BR&q=${encodeURIComponent(q)}`;
+      let url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&countrycodes=br&accept-language=pt-BR&q=${encodeURIComponent(q)}`;
       if (pos) url += `&viewbox=${pos[1] - 3},${pos[0] + 3},${pos[1] + 3},${pos[0] - 3}`;
       const r = await fetch(url);
       if (!r.ok) throw new Error("busca");
       const j = await r.json();
       destResults = j.map((x) => ({ ll: [+x.lat, +x.lon], name: x.display_name, short: x.name || x.display_name.split(",")[0] }));
+      if (pos) destResults.sort((a, b) => G.dist(pos, a.ll) - G.dist(pos, b.ll));
       if (!destResults.length) { $("dest-msg").textContent = "Nada encontrado. Tente com o nome da cidade junto."; return; }
-      $("dest-msg").textContent = "Toque no destino:";
-      $("dest-results").innerHTML = destResults.map((d, i) => `<button class="item" type="button" data-i="${i}"><span><b>${esc(d.short)}</b><small>${esc(d.name)}</small></span>${pos ? `<span class="pill permitida">${fmtDist(G.dist(pos, d.ll))}</span>` : ""}</button>`).join("");
+      renderDestResults("Toque no destino:", true);
     } catch (e) { $("dest-msg").textContent = "A busca não respondeu. Confira a internet e tente de novo."; }
   });
-  $("dest-results").addEventListener("click", (ev) => { const b = ev.target.closest("[data-i]"); if (b) startRoute(destResults[+b.dataset.i]); });
+  $("dest-results").addEventListener("click", (ev) => {
+    if (ev.target.closest("[data-map]")) { showResultsOnMap(); return; }
+    const b = ev.target.closest("[data-i]"); if (!b) return;
+    if (settingPlace) { const d = destResults[+b.dataset.i]; savePlace(settingPlace, d.ll, d.short + (d.name && d.name !== d.short ? ", " + d.name.split(",").slice(1, 3).join(",").trim() : "")); return; }
+    goToResult(+b.dataset.i);
+  });
+
+  // ---------- Casa e Trabalho (guardados só neste celular) ----------
+  const K_LUGARES = "teste-ultrapassagem:lugares";
+  const LUGAR = { casa: { nome: "Casa", icon: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>' },
+    trabalho: { nome: "Trabalho", icon: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/>' } };
+  let lugares = store.get(K_LUGARES, {});
+  let settingPlace = null;
+  function renderPlaces() {
+    $("places").innerHTML = Object.entries(LUGAR).map(([k, l]) => `<button type="button" class="place${settingPlace === k ? " active" : ""}" data-place="${k}"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${l.icon}</svg><span><b>${l.nome}</b><small>${lugares[k] ? esc(lugares[k].label) : "Toque para definir"}</small></span></button>`).join("") +
+      (lugares.casa || lugares.trabalho ? `<button type="button" class="edit" data-place-edit>Alterar endereços</button>` : "");
+    const st = $("place-setup");
+    st.hidden = !settingPlace;
+    if (settingPlace) {
+      $("place-help").textContent = `Busque o endereço de ${settingPlace === "casa" ? "casa" : "trabalho"} aqui embaixo e toque no resultado certo para salvar. Ou use o lugar onde você está agora. Para mudar o outro endereço, toque nele acima.`;
+      $("place-delete").hidden = !lugares[settingPlace];
+    }
+  }
+  function savePlace(k, ll, label) {
+    lugares[k] = { ll: [+ll[0].toFixed(6), +ll[1].toFixed(6)], label: String(label || "").slice(0, 80) || "Endereço salvo" };
+    store.set(K_LUGARES, lugares);
+    settingPlace = null;
+    $("dest-results").innerHTML = ""; $("dest-q").value = "";
+    renderPlaces();
+    $("dest-msg").textContent = `${LUGAR[k].nome} salvo. Agora é só tocar em ${LUGAR[k].nome} para ir.`;
+  }
+  $("places").addEventListener("click", (ev) => {
+    if (ev.target.closest("[data-place-edit]")) {
+      settingPlace = settingPlace ? null : (lugares.casa ? "casa" : "trabalho");
+      renderPlaces(); $("dest-msg").textContent = ""; $("dest-results").innerHTML = "";
+      return;
+    }
+    const b = ev.target.closest("[data-place]"); if (!b) return;
+    const k = b.dataset.place;
+    if (settingPlace || !lugares[k]) { settingPlace = k; renderPlaces(); $("dest-msg").textContent = ""; $("dest-results").innerHTML = ""; setTimeout(() => $("dest-q").focus(), 50); return; }
+    $("dest-sheet").hidden = true;
+    startRoute({ ll: lugares[k].ll, short: LUGAR[k].nome, name: lugares[k].label });
+  });
+  $("place-here").addEventListener("click", () => {
+    if (!pos) { $("dest-msg").textContent = "Aguarde o GPS achar sua posição."; return; }
+    savePlace(settingPlace, pos, "Local marcado pelo GPS");
+  });
+  $("place-cancel").addEventListener("click", () => { settingPlace = null; renderPlaces(); $("dest-msg").textContent = ""; });
+  $("place-delete").addEventListener("click", () => {
+    const k = settingPlace; delete lugares[k]; store.set(K_LUGARES, lugares);
+    settingPlace = null; renderPlaces(); $("dest-msg").textContent = `${LUGAR[k].nome} apagado.`;
+  });
+  renderPlaces();
+
+  // ---------- Resultados no mapa ----------
+  let destCat = null, resultsOn = false;
+  const resultsLayer = L.layerGroup().addTo(map);
+  const pinIcon = L.divIcon({ className: "", iconSize: [30, 30], iconAnchor: [15, 28],
+    html: '<svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 22s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z" fill="#3DD68C" stroke="#141B22" stroke-width="1.5"/><circle cx="12" cy="10" r="2.6" fill="#141B22"/></svg>' });
+  function showResultsOnMap() {
+    if (recording) { setStatus("Termine a gravação da reta antes de ver os resultados no mapa.", true); return; }
+    if (!destResults.length) return;
+    resultsOn = true;
+    $("dest-sheet").hidden = true;
+    poiLayer.clearLayers(); poiDrawn = null;
+    resultsLayer.clearLayers();
+    destResults.forEach((d, i) => {
+      if (i === 0 && pos) L.circleMarker(d.ll, { radius: 22, color: "#FFFFFF", weight: 3, fillOpacity: 0, interactive: false }).addTo(resultsLayer);
+      L.marker(d.ll, { icon: d.cat ? poiIcon(d.cat) : pinIcon, zIndexOffset: i === 0 ? 900 : 500 }).addTo(resultsLayer).bindPopup(() => `<div class="pop"><b>${esc(d.short)}</b>
+        <div class="sub">${esc(d.name)}${pos ? " · " + fmtDist(G.dist(pos, d.ll)) : ""}${i === 0 && pos ? " · o mais perto" : ""}</div>
+        <button type="button" class="go" data-res="${i}">Ir até aqui</button></div>`);
+    });
+    follow = false; $("recenter").classList.remove("active");
+    const pts = destResults.map((d) => d.ll); if (pos) pts.push(pos);
+    if (pts.length > 1) map.fitBounds(L.latLngBounds(pts), { padding: [70, 70], maxZoom: 16 }); else map.setView(pts[0], 15);
+    const n = destResults[0];
+    $("res-title").textContent = destCat ? `${destResults.length} ${CATS[destCat].nome.toLowerCase()} no mapa` : `${destResults.length} ${destResults.length === 1 ? "resultado" : "resultados"} no mapa`;
+    $("res-near").textContent = pos ? `Mais perto: ${n.short} · ${fmtDist(G.dist(pos, n.ll))}` : `Primeiro: ${n.short}`;
+    $("panel-drive").hidden = true; $("panel-results").hidden = false;
+  }
+  function closeResults() {
+    if (!resultsOn) return;
+    resultsOn = false;
+    resultsLayer.clearLayers();
+    $("panel-results").hidden = true; $("panel-drive").hidden = false;
+    drawPois(true);
+  }
+  function goToResult(i) {
+    const d = destResults[i]; if (!d) return;
+    map.closePopup(); closeResults();
+    startRoute({ ll: d.ll, name: d.name, short: d.short });
+  }
+  $("res-go").addEventListener("click", () => goToResult(0));
+  $("res-list").addEventListener("click", () => { $("dest-sheet").hidden = false; });
+  $("res-close").addEventListener("click", () => { closeResults(); follow = true; $("recenter").classList.add("active"); if (pos) map.setView(pos, 16); });
 
   // ---------- Lista ----------
   $("open-list").addEventListener("click", () => { renderList(); $("list-sheet").hidden = false; sync(); });
