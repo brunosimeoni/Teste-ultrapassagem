@@ -16,6 +16,25 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--font); overflow: hidden }
 #map { position: fixed; inset: 0; background: #0f1418 }
+/* Visão 3D: o mapa fica maior que a tela, inclinado e girado pela direção do carro; o carro fica fixo embaixo */
+body.mode3d #map { inset: auto; width: var(--s3d, 2400px); height: var(--s3d, 2400px); left: calc(50vw - var(--s3d, 2400px) / 2); top: calc(var(--cy3d, 66vh) - var(--s3d, 2400px) / 2);
+  transform-origin: 50% 50%; transform: perspective(1300px) rotateX(48deg) rotate(var(--rot3d, 0deg)); transition: transform .7s linear; pointer-events: none }
+body.mode3d .car-mk { visibility: hidden }
+body.mode3d .leaflet-control-attribution { display: none }
+body.mode3d .upright { transform: rotate(calc(-1 * var(--rot3d, 0deg))); transition: transform .7s linear }
+.sky3d, .car3d, .attr3d { display: none }
+body.mode3d .sky3d { display: block; position: fixed; left: 0; right: 0; top: 0; height: 34vh; z-index: 300; pointer-events: none; background: linear-gradient(#141B22 0%, #141B22 35%, rgba(20,27,34,0.75) 65%, rgba(20,27,34,0) 100%) }
+body.mode3d .car3d { display: block; position: fixed; left: calc(50vw - 28px); top: calc(var(--cy3d, 66vh) - 28px); z-index: 310; pointer-events: none; filter: drop-shadow(0 6px 6px rgba(0,0,0,.5)) }
+body.mode3d .attr3d { display: block; position: fixed; right: calc(env(safe-area-inset-right, 0px) + 80px); bottom: calc(env(safe-area-inset-bottom, 0px) + 236px); z-index: 320; font-size: 10px; color: var(--muted); background: rgba(20,27,34,0.75); padding: 2px 6px; border-radius: 6px }
+body.mode3d .attr3d a { color: var(--ok) }
+.btn3d { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 12px); bottom: calc(env(safe-area-inset-bottom, 0px) + 360px); z-index: 500; width: 52px; height: 52px; background: var(--surface); box-shadow: 0 6px 18px rgba(0,0,0,0.4); font: 800 15px var(--font) }
+.btn3d[aria-pressed="true"] { background: var(--ok); color: var(--ok-dark) }
+.dir-row { display: grid; grid-template-columns: 56px 1fr 56px; gap: 10px; align-items: center; text-align: center }
+.dir-row b { font-size: 18px }
+.dir-row .btn { min-height: 52px; display: flex; align-items: center; justify-content: center }
+#dir-both[aria-pressed="true"] { border: 2px solid var(--radar); color: var(--radar) }
+.dir-sum { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--bg); border-radius: 12px; padding: 8px 8px 8px 12px; font-size: 15px }
+.dir-sum .sbtn { min-height: 40px; padding: 0 12px; flex-shrink: 0 }
 .leaflet-tile-pane { filter: brightness(0.62) saturate(0.6) contrast(1.1) }
 .leaflet-control-attribution { background: rgba(20,27,34,0.75) !important; color: var(--muted) !important; font-size: 10px }
 .leaflet-control-attribution a { color: var(--ok) !important }
@@ -194,6 +213,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 <div class="chip" id="chip" hidden aria-live="polite"></div>
 </div>
 
+<button class="icon-btn btn3d" id="btn3d" type="button" aria-pressed="false" aria-label="Visão 3D">3D</button>
+<div class="sky3d" aria-hidden="true"></div>
+<div class="car3d" aria-hidden="true"><svg width="56" height="56" viewBox="0 0 40 40"><path d="M20 4 L32 34 L20 27 L8 34 Z" fill="#F2F5F7" stroke="#4DB2FF" stroke-width="3" stroke-linejoin="round"/></svg></div>
+<div class="attr3d">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
 <div class="speed" id="speed-box"><b id="speed">–</b><span>km/h</span></div>
 <div class="fabs">
   <button class="icon-btn fab hz" id="hazard-btn" aria-label="Avisar outros motoristas">
@@ -234,6 +257,26 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   </div>
 </div>
 
+<div class="panel" id="panel-dir" hidden>
+  <p class="mode-title" id="dir-title">Sentido do radar</p>
+  <p class="note" id="dir-help">Toque no mapa para onde os carros vão quando passam pelo radar, ou gire a seta.</p>
+  <div class="dir-row">
+    <button class="btn ghost" id="dir-left" type="button" aria-label="Girar para a esquerda">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+    </button>
+    <b id="dir-value">Toque no mapa</b>
+    <button class="btn ghost" id="dir-right" type="button" aria-label="Girar para a direita">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+    </button>
+  </div>
+  <div class="mode-row">
+    <button class="btn ghost" id="dir-cancel" type="button">Cancelar</button>
+    <button class="btn ghost" id="dir-both" type="button" aria-pressed="false">Dois sentidos</button>
+    <button class="btn" id="dir-save" type="button" disabled>Salvar</button>
+  </div>
+  <p class="note" id="dir-msg" role="status"></p>
+</div>
+
 <div class="panel" id="panel-results" hidden>
   <p class="mode-title" id="res-title"></p>
   <p class="note" id="res-near"></p>
@@ -264,6 +307,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   <form class="box" id="radar-form">
     <h2>Novo radar</h2>
     <p class="note" id="radar-summary"></p>
+    <div class="dir-sum"><span id="r-dir-txt">Sentido: não definido</span><button type="button" class="sbtn" id="r-dir-adjust">Ajustar sentido</button></div>
     <div>
       <p class="note" style="margin-bottom:8px">Limite de velocidade (km/h)</p>
       <div class="choices" id="r-limite">
@@ -529,6 +573,59 @@ window.APP_CONFIG = {
     return out.sort((x, y) => x.d - y.d).slice(0, 3);
   }
 
+  // Divide uma linha no ponto que fica `along` metros depois do início: [parte percorrida, parte que falta].
+  function splitLine(pts, along) {
+    if (!pts || pts.length < 2) return [[], pts || []];
+    if (along <= 0) return [[pts[0]], pts.slice()];
+    let acc = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const sl = dist(pts[i - 1], pts[i]);
+      if (acc + sl >= along) {
+        const f = sl ? (along - acc) / sl : 0;
+        const mid = [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f];
+        return [[...pts.slice(0, i), mid], [mid, ...pts.slice(i)]];
+      }
+      acc += sl;
+    }
+    return [pts.slice(), [pts[pts.length - 1]]];
+  }
+
+  // Nome do sentido em português, a partir do ângulo (0 = norte).
+  function compassName(deg) {
+    const n = ["norte", "nordeste", "leste", "sudeste", "sul", "sudoeste", "oeste", "noroeste"];
+    return n[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+  }
+
+  // Sentido de um radar do OpenStreetMap a partir da via onde ele está.
+  // tags: as do radar; ways: [{tags, nodes:[ids], geometry:[{lat,lon}]}] que passam pelo nó do radar.
+  // Devolve {dir: graus|null, known: bool}. known=false quando não dá para saber.
+  function osmCameraDirection(nodeId, tags, ways) {
+    tags = tags || {};
+    const raw = String(tags["camera:direction"] ?? tags.direction ?? "").trim().toLowerCase();
+    if (/^\d{1,3}(\.\d+)?$/.test(raw)) return { dir: Math.round(parseFloat(raw)) % 360, known: true };
+    if (raw === "both" || raw === "all") return { dir: null, known: true };
+    const card = { n: 0, nne: 22, ne: 45, ene: 67, e: 90, ese: 112, se: 135, sse: 157, s: 180, ssw: 202, sw: 225, wsw: 247, w: 270, wnw: 292, nw: 315, nnw: 337 };
+    if (raw in card) return { dir: card[raw], known: true };
+    const results = [];
+    for (const w of ways || []) {
+      const idx = (w.nodes || []).indexOf(nodeId);
+      const g = w.geometry || [];
+      if (idx < 0 || g.length < 2) continue;
+      const a = g[Math.max(0, idx - 1)], b = g[Math.min(g.length - 1, idx + 1)];
+      if (!a || !b) continue;
+      const wb = bearing([a.lat, a.lon], [b.lat, b.lon]);
+      const wt = w.tags || {}, ow = String(wt.oneway || "").toLowerCase();
+      if (raw === "forward") results.push(wb);
+      else if (raw === "backward") results.push((wb + 180) % 360);
+      else if (["yes", "true", "1"].includes(ow) || wt.junction === "roundabout") results.push(wb);
+      else if (ow === "-1") results.push((wb + 180) % 360);
+      else return { dir: null, known: false };   // via de mão dupla sem indicação: não dá para saber o lado
+    }
+    if (!results.length) return { dir: null, known: false };
+    if (results.some((r) => angleDiff(r, results[0]) > 45)) return { dir: null, known: false };
+    return { dir: Math.round(results[0]) % 360, known: true };
+  }
+
   // ---------- Navegação até o destino ----------
   const MOD = {
     left: "à esquerda", right: "à direita", "slight left": "levemente à esquerda", "slight right": "levemente à direita",
@@ -575,7 +672,7 @@ window.APP_CONFIG = {
     return { off: pr.d, along: pr.along, next, idx, toNext: next ? next.along - pr.along : remaining, remaining };
   }
 
-  const api = { dist, bearing, angleDiff, lineLength, projectOnLine, radarAhead, radarAnnouncement, resetFar, passingState, passingAhead, STAGES, maneuverText, prepareRoute, routeProgress };
+  const api = { dist, bearing, angleDiff, lineLength, projectOnLine, radarAhead, radarAnnouncement, resetFar, passingState, passingAhead, splitLine, compassName, osmCameraDirection, STAGES, maneuverText, prepareRoute, routeProgress };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Geo = api;
 })(typeof window !== "undefined" ? window : globalThis);
@@ -662,6 +759,20 @@ window.APP_CONFIG = {
   }
   const allRadares = () => [...radares, ...osmVisible()];
 
+  // ---------- Sentido dos radares ----------
+  // Ajustes de sentido feitos pela equipe (tabela "sentidos"), valem por cima do que veio na marcação ou do OpenStreetMap.
+  const K_SENT = "teste-ultrapassagem:sentidos";
+  let sentidos = store.get(K_SENT, {});          // {alvo_id: {direcao, dois_sentidos, _pendente}}
+  let sentidosOk = true;
+  function radarDir(r) {
+    const s = sentidos[r.id];
+    if (s) return s.dois_sentidos ? { dir: null, known: true, both: true } : { dir: s.direcao, known: true, both: false };
+    if (r.direcao != null) return { dir: r.direcao, known: true, both: false };
+    if (r.fonte === "osm" && r.dirKnown) return { dir: null, known: true, both: true };
+    return { dir: null, known: false, both: false };
+  }
+  const dirText = (d) => (d.both ? "vale para os dois sentidos" : d.dir != null ? `vale só para quem vai sentido ${G.compassName(d.dir)}` : "sentido ainda não definido");
+
   // ---------- Mapa ----------
   const map = L.map("map", { zoomControl: false }).setView([-15.8, -47.9], 5);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -671,12 +782,12 @@ window.APP_CONFIG = {
   const trechosLayer = L.layerGroup().addTo(map);
   const radaresLayer = L.layerGroup().addTo(map);
   const carIcon = L.divIcon({ className: "", iconSize: [44, 44], iconAnchor: [22, 22],
-    html: '<div id="car" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;transition:transform .4s">' +
+    html: '<div id="car" class="car-mk" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;transition:transform .4s">' +
       '<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="rgba(77,178,255,0.18)"/>' +
       '<path d="M20 6 L30 32 L20 26 L10 32 Z" fill="#F2F5F7" stroke="#4DB2FF" stroke-width="3" stroke-linejoin="round"/></svg></div>' });
   let carMarker = null, accCircle = null;
-  const radarIcon = (lim, faded, unconfirmed) => L.divIcon({ className: "", iconSize: [34, 34], iconAnchor: [17, 17],
-    html: `<div style="width:34px;height:34px;border-radius:50%;background:#fff;border:4px solid ${faded ? "#8C98A3" : "#E5484D"};display:flex;align-items:center;justify-content:center;font:800 13px Overpass,Arial,sans-serif;color:#141414;opacity:${faded ? 0.55 : 1};box-shadow:0 0 0 3px ${unconfirmed ? "#9AA7B2" : "#FF9A3C"}">${lim == null ? "?" : lim}</div>` });
+  const radarIcon = (lim, faded, unconfirmed, dir) => L.divIcon({ className: "", iconSize: [60, 60], iconAnchor: [30, 30],
+    html: `<div style="position:relative;width:60px;height:60px">${dir == null ? "" : `<div style="position:absolute;inset:0;transform:rotate(${dir}deg)"><svg width="60" height="60" viewBox="0 0 60 60" style="position:absolute;inset:0"><path d="M30 0 L40 12 L20 12 Z" fill="#FF9A3C" stroke="#141B22" stroke-width="2" stroke-linejoin="round"/></svg></div>`}<div class="upright" style="position:absolute;left:13px;top:13px;width:34px;height:34px;box-sizing:border-box;border-radius:50%;background:#fff;border:4px solid ${faded ? "#8C98A3" : "#E5484D"};display:flex;align-items:center;justify-content:center;font:800 13px Overpass,Arial,sans-serif;color:#141414;opacity:${faded ? 0.55 : 1};box-shadow:0 0 0 3px ${unconfirmed ? "#9AA7B2" : "#FF9A3C"}">${lim == null ? "?" : lim}</div></div>` });
 
   // ---------- Votos ----------
   function counts(id) {
@@ -721,6 +832,20 @@ window.APP_CONFIG = {
       redraw();
     } catch (e) { syncError = true; renderList(); }
     await pullAlertas();
+    await pullSentidos();
+  }
+  async function pullSentidos() {
+    try {
+      const r = await api("sentidos?select=alvo_id,direcao,dois_sentidos&limit=10000");
+      if (!r.ok) { sentidosOk = false; return; }
+      const rows = await r.json();
+      const novo = {};
+      for (const [id, v] of Object.entries(sentidos)) if (v._pendente) novo[id] = v;
+      for (const row of rows) if (!novo[row.alvo_id]) novo[row.alvo_id] = { direcao: row.direcao, dois_sentidos: !!row.dois_sentidos };
+      sentidos = novo; sentidosOk = true;
+      store.set(K_SENT, sentidos);
+      drawRadares();
+    } catch (e) { /* sem internet */ }
   }
   // Alertas vêm separados: se a tabela ainda não existir no banco, o resto do app continua funcionando.
   let alertasOk = true;
@@ -750,6 +875,15 @@ window.APP_CONFIG = {
     await send("trechos", trechos.filter((t) => t._pendente));
     await send("radares", radares.filter((t) => t._pendente));
     await send("alertas", alertas.filter((t) => t._pendente));
+    for (const [id, v] of Object.entries(sentidos)) {
+      if (!v._pendente) continue;
+      try {
+        const r = await api("sentidos", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify({ alvo_id: id, direcao: v.direcao, dois_sentidos: !!v.dois_sentidos, dispositivo: device, atualizado_em: new Date().toISOString() }) });
+        if (r.ok) v._pendente = false; else sentidosOk = false;
+      } catch (e) { break; }
+    }
+    store.set(K_SENT, sentidos);
     store.set(K_ALERTAS, alertas);
     for (const [id, mv] of Object.entries(meusVotos)) {
       if (!mv.pendente) continue;
@@ -795,9 +929,11 @@ window.APP_CONFIG = {
     radaresLayer.clearLayers();
     for (const r of allRadares()) {
       const fromOsm = r.fonte === "osm";
-      const m = L.marker([r.lat, r.lng], { icon: radarIcon(r.limite, disputed(r.id), fromOsm && counts(r.id).sim === 0) }).addTo(radaresLayer);
+      const d = radarDir(r);
+      const m = L.marker([r.lat, r.lng], { icon: radarIcon(r.limite, disputed(r.id), fromOsm && counts(r.id).sim === 0, d.dir) }).addTo(radaresLayer);
       m.bindPopup(() => `<div class="pop"><b>${RTIPOS[r.tipo] || "Radar"} · ${r.limite == null ? "limite não informado" : r.limite + " km/h"}</b>
-        <div class="sub">${r.direcao == null ? "Vale para os dois sentidos" : "Vale para um sentido da via"}</div>
+        <div class="sub">${d.known ? "" : "⚠ "}${dirText(radarDir(r)).replace(/^./, (c) => c.toUpperCase())}.</div>
+        <button type="button" class="go" data-dir-radar="${esc(r.id)}" style="background:var(--surface-2);color:var(--fg);border-color:var(--surface-2)">Ajustar sentido</button>
         ${fromOsm
           ? `<div class="sub">Fonte: <a href="https://www.openstreetmap.org/node/${esc(r.osmId)}" target="_blank" rel="noopener">OpenStreetMap</a>. Ainda não conferido pela equipe se ninguém confirmou.</div>`
           : `<div class="sub">Por ${esc(r.autor || "alguém da equipe")} em ${fmtDate(r.criado_em)}</div>`}${votesHtml(r.id)}</div>`);
@@ -806,31 +942,34 @@ window.APP_CONFIG = {
 
   // ---------- Radares do OpenStreetMap ----------
   function parseOsm(json) {
-    const out = [];
-    for (const el of (json && json.elements) || []) {
+    const out = [], els = (json && json.elements) || [];
+    const ways = els.filter((el) => el.type === "way" && Array.isArray(el.nodes));
+    const waysByNode = {};
+    for (const w of ways) for (const nid of w.nodes) (waysByNode[nid] || (waysByNode[nid] = [])).push(w);
+    for (const el of els) {
       if (el.type !== "node" || typeof el.lat !== "number") continue;
       const t = el.tags || {};
+      if (t.highway !== "speed_camera") continue;
       const ms = parseInt(String(t.maxspeed || "").replace(/[^0-9].*$/, ""), 10);
-      const dirRaw = t["camera:direction"] ?? t.direction;
-      const dir = /^\d{1,3}(\.\d+)?$/.test(String(dirRaw || "").trim()) ? Math.round(parseFloat(dirRaw)) % 360 : null;
+      const d = G.osmCameraDirection(el.id, t, waysByNode[el.id] || []);
       out.push({ id: osmUuid(el.id), osmId: String(el.id), fonte: "osm", lat: +el.lat.toFixed(6), lng: +el.lon.toFixed(6),
-        limite: ms >= 20 && ms <= 130 ? ms : null, tipo: "fixo", direcao: dir });
+        limite: ms >= 20 && ms <= 130 ? ms : null, tipo: "fixo", direcao: d.dir, dirKnown: d.known });
     }
     return out.slice(0, 3000);
   }
   async function loadOsm(force) {
     if (!pos || osmLoading) return;
-    const fresh = osm.center && G.dist(osm.center, pos) < 20000 && Date.now() - osm.at < 24 * 3600 * 1000;
+    const fresh = osm.v === 2 && osm.center && G.dist(osm.center, pos) < 20000 && Date.now() - osm.at < 24 * 3600 * 1000;
     if (fresh && !force) return;
     osmLoading = true;
     const s = (pos[0] - 0.3).toFixed(4), n = (pos[0] + 0.3).toFixed(4), w = (pos[1] - 0.35).toFixed(4), e = (pos[1] + 0.35).toFixed(4);
-    const q = `[out:json][timeout:25];node["highway"="speed_camera"](${s},${w},${n},${e});out body 3000;`;
+    const q = `[out:json][timeout:25];node["highway"="speed_camera"](${s},${w},${n},${e})->.c;.c out body 3000;way(bn.c)["highway"];out body geom;`;
     for (const url of OVERPASS) {
       try {
         const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) });
         if (!r.ok) continue;
         const items = parseOsm(await r.json());
-        osm = { items, center: [pos[0], pos[1]], at: Date.now() };
+        osm = { v: 2, items, center: [pos[0], pos[1]], at: Date.now() };
         store.set(K.osm, osm);
         drawRadares(); renderList(); updateTop();
         setStatus(items.length ? `${items.length} ${items.length === 1 ? "radar do OpenStreetMap carregado" : "radares do OpenStreetMap carregados"} nesta região.` : "O OpenStreetMap não tem radares marcados nesta região.");
@@ -1020,6 +1159,7 @@ window.APP_CONFIG = {
     el.querySelectorAll("button[data-vote]").forEach((b) => b.addEventListener("click", () => { vote(b.dataset.id, b.dataset.vote); map.closePopup(); }));
     el.querySelectorAll("button[data-go]").forEach((b) => b.addEventListener("click", () => goToPoi(b.dataset.go)));
     el.querySelectorAll("button[data-res]").forEach((b) => b.addEventListener("click", () => goToResult(+b.dataset.res)));
+    el.querySelectorAll("button[data-dir-radar]").forEach((b) => b.addEventListener("click", () => { map.closePopup(); editRadarDir(b.dataset.dirRadar); }));
   });
 
   function renderList() {
@@ -1104,7 +1244,7 @@ window.APP_CONFIG = {
   $("pass-voice").addEventListener("change", () => setPassVoice($("pass-voice").checked));
 
   // ---------- Alertas ----------
-  const activeRadares = () => allRadares().filter((r) => !disputed(r.id));
+  const activeRadares = () => allRadares().filter((r) => !disputed(r.id)).map((r) => { const d = radarDir(r); return { ...r, direcao: d.dir, _dirKnown: d.known }; });
   const activeTrechos = () => trechos.filter((t) => !disputed(t.id));
   function updateAlerts() {
     if (!pos) return;
@@ -1116,7 +1256,7 @@ window.APP_CONFIG = {
     if (hit && hit.d <= 1000) {
       const lim = hit.radar.limite, over = lim != null && kmh != null && kmh > lim + 2;
       $("alert-lim").textContent = lim == null ? "?" : lim;
-      $("alert-kind").textContent = (RTIPOS[hit.radar.tipo] || "Radar").toUpperCase();
+      $("alert-kind").textContent = (RTIPOS[hit.radar.tipo] || "Radar").toUpperCase() + (hit.radar._dirKnown ? "" : " · SENTIDO A DEFINIR");
       $("alert-dist").textContent = fmtDist(hit.d);
       $("alert-msg").textContent = over ? `Você está a ${Math.round(kmh)}. Reduza para ${lim} km/h` : lim == null ? "Limite não informado: confira a placa" : `Limite ${lim} km/h`;
       box.classList.toggle("over", over);
@@ -1200,9 +1340,11 @@ window.APP_CONFIG = {
       $("dest-icon-search").style.display = "none"; $("dest-icon-close").style.display = "";
       $("dest-btn").setAttribute("aria-label", "Encerrar rota");
       $("top").classList.add("nav");
-      map.fitBounds(L.latLngBounds(route.line), { padding: [80, 80] });
-      follow = false; $("recenter").classList.remove("active");
-      setTimeout(() => { follow = true; $("recenter").classList.add("active"); if (pos) map.setView(pos, 16); }, 2500);
+      if (!mode3d) {
+        map.fitBounds(L.latLngBounds(route.line), { padding: [80, 80] });
+        follow = false; $("recenter").classList.remove("active");
+        setTimeout(() => { follow = true; $("recenter").classList.add("active"); if (pos) map.setView(pos, mode3d ? 17 : 16); }, 2500);
+      }
       speak(`Rota calculada. ${voiceDist(route.total)} até ${dest.short}.`);
       updateNav();
       updateTop();
@@ -1212,8 +1354,12 @@ window.APP_CONFIG = {
   function drawRoute() {
     routeLayer.clearLayers();
     if (!nav) return;
-    L.polyline(nav.route.line, { color: "#0E5132", weight: 12, opacity: 0.9 }).addTo(routeLayer);
-    L.polyline(nav.route.line, { color: "#3DD68C", weight: 6, opacity: 1 }).addTo(routeLayer);
+    // Parte já percorrida em cinza e apagada; a que falta em verde forte
+    nav.lines = {
+      passed: L.polyline([nav.route.line[0]], { color: "#8C98A3", weight: 6, opacity: 0.4 }).addTo(routeLayer),
+      aheadBg: L.polyline(nav.route.line, { color: "#0E5132", weight: 12, opacity: 0.9 }).addTo(routeLayer),
+      ahead: L.polyline(nav.route.line, { color: "#3DD68C", weight: 6, opacity: 1 }).addTo(routeLayer)
+    };
     L.circleMarker(nav.dest.ll, { radius: 9, color: "#fff", weight: 3, fillColor: "#3DD68C", fillOpacity: 1 }).addTo(routeLayer);
   }
   function endRoute(msg) {
@@ -1232,6 +1378,10 @@ window.APP_CONFIG = {
   function updateNav() {
     if (!nav || !pos) return;
     const pr = G.routeProgress(pos, nav.route);
+    if (nav.lines && pr.off < 60) {
+      const [past, rest] = G.splitLine(nav.route.line, pr.along);
+      nav.lines.passed.setLatLngs(past); nav.lines.aheadBg.setLatLngs(rest); nav.lines.ahead.setLatLngs(rest);
+    }
     if (pr.remaining < 35) { speak("Você chegou ao destino."); endRoute("Você chegou ao destino."); return; }
     if (pr.off > 60) { nav.offCount++; if (nav.offCount >= 3 && Date.now() - nav.lastReroute > 15000) reroute(); } else nav.offCount = 0;
     const step = pr.next;
@@ -1271,7 +1421,7 @@ window.APP_CONFIG = {
     if (!carMarker) {
       carMarker = L.marker(here, { icon: carIcon, interactive: false, zIndexOffset: 1000 }).addTo(map);
       accCircle = L.circle(here, { radius: c.accuracy, color: "#4DB2FF", weight: 1, fillOpacity: 0.08, interactive: false }).addTo(map);
-      map.setView(here, 16);
+      map.setView(here, mode3d ? 17 : 16);
       $("rec").disabled = false;
     } else { carMarker.setLatLng(here); accCircle.setLatLng(here).setRadius(c.accuracy); }
 
@@ -1286,6 +1436,7 @@ window.APP_CONFIG = {
     }
     const car = document.getElementById("car");
     if (car && heading != null) car.style.transform = `rotate(${heading}deg)`;
+    if (mode3d && heading != null) setRot3d(heading);
     if (!lastFix || G.dist(lastFix.ll, here) > 3 || p.timestamp - lastFix.t > 5000) lastFix = { ll: here, t: p.timestamp };
     pos = here;
     if (follow && !pickMode) map.panTo(here, { animate: true, duration: 0.5 });
@@ -1372,6 +1523,7 @@ window.APP_CONFIG = {
   // ---------- Marcar no mapa ----------
   function enterPick(mode) {
     if (recording) { setStatus("Termine a gravação antes de marcar no mapa.", true); return; }
+    exit3d();
     pickMode = mode; pickPoints = [];
     follow = false; $("recenter").classList.remove("active");
     $("panel-drive").hidden = true; $("panel-pick").hidden = false;
@@ -1398,10 +1550,15 @@ window.APP_CONFIG = {
     $("pick-title").textContent = pickPoints.length === 0 ? `Marcando: ${NOMES[tipo]}. Toque no início` : pickPoints.length === 1 ? "Agora toque no fim (ou numa curva), seguindo o sentido do carro" : `${fmtDist(G.lineLength(pickPoints))} marcados`;
   }
   map.on("click", (e) => {
-    if (!pickMode) return;
+    if (!pickMode && !dirEdit) return;
     const p = round6([e.latlng.lat, e.latlng.lng]);
+    if (dirEdit) { dirEdit.dir = Math.round(G.bearing([dirEdit.lat, dirEdit.lng], p)) % 360; dirEdit.both = false; renderDir(); return; }
     if (pickMode === "line") { pickPoints.push(p); drawPick(); return; }
-    if (pickMode === "radar") { exitPick(); openRadar({ lat: p[0], lng: p[1], direcao: null }, "no local tocado no mapa. Vai avisar nos dois sentidos."); }
+    if (pickMode === "radar") {
+      exitPick();
+      enterDir({ lat: p[0], lng: p[1], dir: heading != null ? Math.round(heading) % 360 : null, both: false, title: "Sentido do novo radar",
+        onSave: (dir, both) => { openRadar({ lat: p[0], lng: p[1], direcao: both ? null : dir, _both: both }, "no local tocado no mapa."); } });
+    }
   });
   $("pick-line").addEventListener("click", () => enterPick("line"));
   $("pick-radar").addEventListener("click", () => enterPick("radar"));
@@ -1427,19 +1584,116 @@ window.APP_CONFIG = {
   }
   choice("r-limite", (v) => (rLimite = +v));
   choice("r-tipo", (v) => (rTipo = v));
-  function openRadar(r, txt) { pendingRadar = r; $("radar-summary").textContent = "Radar " + txt; $("radar-sheet").hidden = false; }
+  function renderRadarDir() {
+    const r = pendingRadar; if (!r) return;
+    $("r-dir-txt").textContent = r._both ? "Sentido: os dois" : r.direcao != null ? `Sentido: ${G.compassName(r.direcao)}` : "Sentido: não definido";
+  }
+  function openRadar(r, txt) { pendingRadar = r; $("radar-summary").textContent = "Radar " + txt; renderRadarDir(); $("radar-sheet").hidden = false; }
   $("radar-here").addEventListener("click", () => {
     if (!pos) { setStatus("Aguardando o GPS achar sua posição.", true); return; }
-    const moving = kmh != null && kmh > 10 && heading != null;
-    openRadar({ lat: +pos[0].toFixed(6), lng: +pos[1].toFixed(6), direcao: moving ? Math.round(heading) % 360 : null },
-      moving ? "na sua posição atual. Vai avisar só neste sentido da via." : "na sua posição atual. Vai avisar nos dois sentidos.");
+    const here = { lat: +pos[0].toFixed(6), lng: +pos[1].toFixed(6) };
+    if (heading != null) { openRadar({ ...here, direcao: Math.round(heading) % 360, _both: false }, "na sua posição atual, no sentido em que você está indo."); return; }
+    enterDir({ ...here, dir: null, both: false, title: "Sentido do novo radar", onSave: (dir, both) => openRadar({ ...here, direcao: both ? null : dir, _both: both }, "na sua posição atual.") });
   });
+  $("r-dir-adjust").addEventListener("click", () => {
+    const r = pendingRadar; if (!r) return;
+    $("radar-sheet").hidden = true;
+    enterDir({ lat: r.lat, lng: r.lng, dir: r.direcao, both: !!r._both, title: "Sentido do novo radar",
+      onSave: (dir, both) => { r.direcao = both ? null : dir; r._both = both; renderRadarDir(); $("radar-sheet").hidden = false; },
+      onCancel: () => { $("radar-sheet").hidden = false; } });
+  });
+
+  // ---------- Escolher o sentido (seta no mapa) ----------
+  let dirEdit = null, dirMarker = null;
+  const dirIcon = (dir, both) => L.divIcon({ className: "", iconSize: [120, 120], iconAnchor: [60, 60],
+    html: `<div style="width:120px;height:120px;transform:rotate(${dir || 0}deg)"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="rgba(255,154,60,0.12)" stroke="#FF9A3C" stroke-width="2" stroke-dasharray="6 6"/>${dir == null && !both ? "" : `<path d="M60 8 L76 34 L66 34 L66 60 L54 60 L54 34 L44 34 Z" fill="#FF9A3C" stroke="#141B22" stroke-width="2" stroke-linejoin="round"/>${both ? `<path d="M60 112 L76 86 L66 86 L66 60 L54 60 L54 86 L44 86 Z" fill="#FF9A3C" stroke="#141B22" stroke-width="2" stroke-linejoin="round"/>` : ""}`}<circle cx="60" cy="60" r="7" fill="#fff" stroke="#E5484D" stroke-width="3"/></svg></div>` });
+  function enterDir(opts) {
+    if (recording) { setStatus("Termine a gravação antes de ajustar o sentido.", true); return; }
+    exit3d();
+    dirEdit = { ...opts };
+    follow = false; $("recenter").classList.remove("active");
+    map.setView([opts.lat, opts.lng], Math.max(map.getZoom(), 17));
+    $("panel-drive").hidden = true; $("panel-results").hidden = true; $("panel-dir").hidden = false;
+    $("dir-title").textContent = opts.title || "Sentido do radar";
+    $("dir-msg").textContent = "";
+    map.getContainer().classList.add("picking");
+    renderDir();
+  }
+  function renderDir() {
+    const d = dirEdit; if (!d) return;
+    if (dirMarker) dirMarker.setIcon(dirIcon(d.dir, d.both));
+    else dirMarker = L.marker([d.lat, d.lng], { icon: dirIcon(d.dir, d.both), interactive: false, zIndexOffset: 2000 }).addTo(map);
+    $("dir-value").textContent = d.both ? "Os dois sentidos" : d.dir != null ? `Sentido ${G.compassName(d.dir)}` : "Toque no mapa";
+    $("dir-both").setAttribute("aria-pressed", String(!!d.both));
+    $("dir-save").disabled = !d.both && d.dir == null;
+  }
+  function exitDir() {
+    dirEdit = null;
+    if (dirMarker) { map.removeLayer(dirMarker); dirMarker = null; }
+    $("panel-dir").hidden = true; $("panel-drive").hidden = false;
+    map.getContainer().classList.remove("picking");
+  }
+  const turn = (deg) => { if (!dirEdit) return; dirEdit.both = false; dirEdit.dir = (((dirEdit.dir ?? (heading != null ? Math.round(heading) : 0)) + deg) % 360 + 360) % 360; renderDir(); };
+  $("dir-left").addEventListener("click", () => turn(-15));
+  $("dir-right").addEventListener("click", () => turn(15));
+  $("dir-both").addEventListener("click", () => { if (!dirEdit) return; dirEdit.both = !dirEdit.both; renderDir(); });
+  $("dir-cancel").addEventListener("click", () => { const d = dirEdit; exitDir(); if (d && d.onCancel) d.onCancel(); });
+  $("dir-save").addEventListener("click", () => { const d = dirEdit; if (!d || (!d.both && d.dir == null)) return; exitDir(); d.onSave(d.both ? null : d.dir, !!d.both); });
+  function editRadarDir(id) {
+    const r = allRadares().find((x) => x.id === id); if (!r) return;
+    const cur = radarDir(r);
+    enterDir({ lat: r.lat, lng: r.lng, dir: cur.dir, both: cur.both, title: "Ajustar o sentido do radar",
+      onSave: (dir, both) => {
+        sentidos[id] = { direcao: dir, dois_sentidos: both, _pendente: REMOTE };
+        store.set(K_SENT, sentidos);
+        drawRadares();
+        setStatus(both ? "Radar ajustado: vale para os dois sentidos." : `Radar ajustado: avisa só quem vai sentido ${G.compassName(dir)}.`);
+        push().then(() => { if (REMOTE && !sentidosOk) setStatus("Sentido salvo só neste celular: falta criar a tabela de sentidos no banco.", true); });
+      } });
+  }
+
+  // ---------- Visão 3D ----------
+  let mode3d = false, rot3d = 0;
+  function setRot3d(h) {
+    const target = -h;
+    const delta = ((target - rot3d) % 360 + 540) % 360 - 180;   // gira pelo caminho mais curto
+    rot3d += delta;
+    document.documentElement.style.setProperty("--rot3d", rot3d.toFixed(1) + "deg");
+  }
+  function size3d() {
+    const s = Math.min(3000, Math.ceil(Math.max(window.innerWidth, window.innerHeight) * 2.6));
+    document.documentElement.style.setProperty("--s3d", s + "px");
+  }
+  function enter3d() {
+    if (mode3d) return;
+    if (pickMode || dirEdit || resultsOn) return;
+    mode3d = true; size3d();
+    document.body.classList.add("mode3d");
+    $("btn3d").setAttribute("aria-pressed", "true"); $("btn3d").textContent = "2D"; $("btn3d").setAttribute("aria-label", "Voltar para a visão de cima");
+    if (heading != null) setRot3d(heading);
+    follow = true; $("recenter").classList.add("active");
+    map.closePopup();
+    map.invalidateSize();
+    if (pos) map.setView(pos, 17, { animate: false });
+  }
+  function exit3d() {
+    if (!mode3d) return;
+    mode3d = false;
+    document.body.classList.remove("mode3d");
+    $("btn3d").setAttribute("aria-pressed", "false"); $("btn3d").textContent = "3D"; $("btn3d").setAttribute("aria-label", "Visão 3D");
+    map.invalidateSize();
+    if (pos) map.setView(pos, 16, { animate: false });
+  }
+  $("btn3d").addEventListener("click", () => (mode3d ? exit3d() : enter3d()));
+  window.addEventListener("resize", () => { if (mode3d) { size3d(); map.invalidateSize(); if (pos) map.setView(pos, map.getZoom(), { animate: false }); } });
   $("r-cancel").addEventListener("click", () => { pendingRadar = null; $("radar-sheet").hidden = true; });
   $("radar-form").addEventListener("submit", (ev) => {
     ev.preventDefault();
     if (!pendingRadar) return;
-    const r = { id: uuid(), ...pendingRadar, limite: rLimite, tipo: rTipo, autor: store.get(K.nome, "") || null, criado_em: new Date().toISOString(), _pendente: REMOTE };
+    const { _both, ...base } = pendingRadar;
+    const r = { id: uuid(), ...base, limite: rLimite, tipo: rTipo, autor: store.get(K.nome, "") || null, criado_em: new Date().toISOString(), _pendente: REMOTE };
     radares.unshift(r); store.set(K.radares, radares);
+    if (_both) { sentidos[r.id] = { direcao: null, dois_sentidos: true, _pendente: REMOTE }; store.set(K_SENT, sentidos); }
     meusVotos[r.id] = { voto: "sim", pendente: REMOTE }; store.set(K.meus, meusVotos);
     pendingRadar = null; $("radar-sheet").hidden = true;
     redraw(); setStatus(`Radar de ${r.limite} km/h salvo.`); updateTop();
@@ -1576,6 +1830,7 @@ window.APP_CONFIG = {
     html: '<svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 22s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z" fill="#3DD68C" stroke="#141B22" stroke-width="1.5"/><circle cx="12" cy="10" r="2.6" fill="#141B22"/></svg>' });
   function showResultsOnMap() {
     if (recording) { setStatus("Termine a gravação da reta antes de ver os resultados no mapa.", true); return; }
+    exit3d();
     if (!destResults.length) return;
     resultsOn = true;
     $("dest-sheet").hidden = true;
@@ -1619,6 +1874,7 @@ window.APP_CONFIG = {
   $("tab-radares").addEventListener("click", () => { listTab = "radares"; renderList(); });
   $("list").addEventListener("click", (ev) => {
     const b = ev.target.closest(".item"); if (!b) return;
+    exit3d();
     follow = false; $("recenter").classList.remove("active"); $("list-sheet").hidden = true;
     if (b.dataset.kind === "t") { const t = trechos.find((x) => x.id === b.dataset.id); if (t && t.pontos && t.pontos.length > 1) map.fitBounds(L.latLngBounds(t.pontos), { padding: [60, 60] }); }
     else { const r = radares.find((x) => x.id === b.dataset.id); if (r) map.setView([r.lat, r.lng], 17); }
@@ -1641,7 +1897,7 @@ window.APP_CONFIG = {
   });
 
   map.on("dragstart", () => { follow = false; $("recenter").classList.remove("active"); });
-  $("recenter").addEventListener("click", () => { follow = true; $("recenter").classList.add("active"); if (pos) map.setView(pos, Math.max(map.getZoom(), 16)); });
+  $("recenter").addEventListener("click", () => { follow = true; $("recenter").classList.add("active"); if (pos) map.setView(pos, mode3d ? 17 : Math.max(map.getZoom(), 16)); });
 
   // ---------- Início ----------
   renderSound();
