@@ -30,6 +30,8 @@ body.mode3d .upright { transform: rotate(calc(-1 * var(--rot3d, 0deg))); transit
 body.panel-open .cvbtn { display: none }
 .cvmsg { background: #2A2150; border: 2px solid #7C5CFF; color: #E5DEFF; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; pointer-events: auto }
 .cvmsg[hidden] { display: none }
+.invite-note { margin: 0; background: #2A2150; border: 2px solid #7C5CFF; color: #fff !important; border-radius: 14px; padding: 12px 14px; font-weight: 700 }
+.invite-note[hidden] { display: none }
 .stack:has(#cv-msg:not([hidden])) { z-index: 950 }
 .cvmsg .cv-from { font-size: 13px; font-weight: 700; color: #B9A8FF; letter-spacing: .04em }
 .cvmsg .cv-txt { font-size: 20px; font-weight: 800; color: #fff; line-height: 1.2 }
@@ -540,6 +542,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   <h1>Teste de Ultrapassagem</h1>
   <p>O mapa acompanha o carro e avisa por voz os radares e as retas liberadas à frente. Para marcar uma reta, toque em <b>Começou a reta</b> e em <b>Terminou a reta</b>, ou desenhe no mapa.</p>
   <div class="warn-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3L12 3z"/><path d="M12 10v4M12 17v.5"/></svg><span>Quem toca nos botões é o passageiro. O motorista só dirige. Os alertas ajudam, mas a sinalização da pista é que vale.</span></div>
+  <p class="invite-note" id="invite-note" hidden role="status"></p>
   <button class="btn" id="go" type="button" style="min-height:60px;font-size:19px">Abrir mapa e ativar GPS</button>
   <p id="boot-error" role="alert" style="margin:0;color:var(--radar);font-size:15px;line-height:1.45" hidden></p>
 </div>
@@ -2290,7 +2293,9 @@ window.APP_CONFIG = {
     $("cv-code-txt").textContent = cv.code;
     const link = location.origin + location.pathname + "?comboio=" + cv.code;
     $("cv-wa").href = "https://wa.me/?text=" + encodeURIComponent(`Entra no meu comboio no app de ultrapassagem: ${link} (código ${cv.code})`);
-    $("cv-status").textContent = cvOk === false ? "Sem conexão com o comboio agora. Tentando de novo…" : cvMembers.length ? "" : "Ninguém mais entrou ainda. Mande o convite pelo WhatsApp.";
+    $("cv-status").textContent = cvOk === false ? "Sem conexão com o comboio agora. Tentando de novo…"
+      : !pos ? "Esperando o GPS achar você. Até lá, os outros não te veem no mapa."
+      : cvMembers.length ? "" : "Ninguém mais está neste comboio agora. Mande o convite pelo WhatsApp ou confira o código.";
     $("cv-members").innerHTML = cvMembers.map((m) => {
       const stale = Date.now() - new Date(m.atualizado_em).getTime() > 120000;
       const seguir = m.destino_lat != null && !(nav && G.dist(nav.dest.ll, [m.destino_lat, m.destino_lng]) < 200)
@@ -2371,14 +2376,18 @@ window.APP_CONFIG = {
     if (!nome) { $("cv-name").focus(); cvNote("Escreva seu nome para o comboio saber quem é você.", true); return; }
     store.set(K.nome, nome); if ($("nome")) $("nome").value = nome;
     if (!REMOTE) { cvNote("O comboio precisa do banco de dados configurado.", true); return; }
-    try { await rpc("comboio_ler", { c: code }); }
+    let antes = [];
+    try { antes = (await rpc("comboio_ler", { c: code })) || []; }
     catch (e) { cvNote(e.status === 404 ? "O banco ainda não tem o comboio. Rode o código novo no Supabase." : "Não foi possível conectar ao comboio. Confira a internet.", true); return; }
     cv = { code, lastId: 0 }; cvHistory = []; cvMembers = [];
     store.set(K_CV, cv);
     await cvTick(true);
     cvStart();
     renderCv();
-    cvNote(criando ? `Comboio ${code} criado. Convide os outros motoristas.` : `Você entrou no comboio ${code}.`);
+    const vazio = !criando && !antes.some((r) => r.dispositivo !== device);
+    cvNote(criando ? `Comboio ${code} criado. Convide os outros motoristas.`
+      : vazio ? `Você entrou no comboio ${code}, mas não tem ninguém nele agora. Confira se o código está certo e se o outro motorista está com o app aberto.`
+      : `Você entrou no comboio ${code}.`, vazio);
     if (!criando && cvMembers.length) sendCv("entrou", `${nome} entrou no comboio`);
   }
   async function sendCv(tipo, texto, btn) {
@@ -2404,7 +2413,7 @@ window.APP_CONFIG = {
     cv = null; cvMembers = []; cvHistory = [];
     store.set(K_CV, null); clearInterval(cvTimer);
     drawCv(); renderCv(); renderCvBadge();
-    cvNote("Você saiu do comboio. Sua localização parou de ser compartilhada.");
+    cvNote("Você saiu do comboio. Sua localização parou de ser compartilhada. Para entrar em outro, digite o código abaixo.");
   }
   // ----- Rádio do comboio: segure o microfone, fale, solte; toca sozinho nos outros carros
   const MAX_TALK = 30000;
@@ -2554,9 +2563,17 @@ window.APP_CONFIG = {
   });
   // Abriu o app por um convite: já deixa o código preenchido
   const cvInvite = new URLSearchParams(location.search).get("comboio");
-  if (cvInvite && (!cv || cv.code !== cvInvite.toUpperCase())) {
-    $("cv-code").value = cvInvite.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
-    $("go").addEventListener("click", () => setTimeout(() => { renderCv(); $("convoy-sheet").hidden = false; cvNote("Você foi convidado para um comboio. Escreva seu nome e toque em Entrar."); }, 300));
+  const inviteCode = (cvInvite || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  if (inviteCode.length >= 4 && (!cv || cv.code !== inviteCode)) {
+    const antigo = cv;
+    if (antigo) {                                   // estava em outro comboio: troca pelo do convite
+      cv = null; store.set(K_CV, null);
+      rpc("comboio_sair", { c: antigo.code, d: device }).catch(() => {});
+    }
+    $("cv-code").value = inviteCode;
+    const n = $("invite-note");
+    if (n) { n.hidden = false; n.textContent = `Você foi convidado para o comboio ${inviteCode}. Toque no botão abaixo e depois em Entrar.`; }
+    $("go").addEventListener("click", () => setTimeout(() => { renderCv(); $("convoy-sheet").hidden = false; cvNote(`Convite para o comboio ${inviteCode}. Confira seu nome e toque em Entrar.`); }, 300));
   }
   if (cv) { cvStart(); setTimeout(() => cvTick(true), 1500); }
   renderCvBadge();
