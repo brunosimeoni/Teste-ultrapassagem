@@ -23,6 +23,39 @@ body.mode3d .car-mk { visibility: hidden }
 body.mode3d .leaflet-control-attribution { display: none }
 body.mode3d .upright { transform: rotate(calc(-1 * var(--rot3d, 0deg))); transition: transform .7s linear }
 .sky3d, .car3d, .attr3d { display: none }
+.cvbtn { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 12px); bottom: calc(env(safe-area-inset-bottom, 0px) + var(--pb) + 314px); z-index: 500; width: 52px; height: 52px; background: var(--surface); box-shadow: 0 6px 18px rgba(0,0,0,0.4) }
+.cvbtn.on { background: #7C5CFF; color: #fff }
+.cvbadge { position: absolute; top: -4px; right: -4px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--third); color: #062014; font: 800 13px var(--font); display: flex; align-items: center; justify-content: center; padding: 0 5px }
+.cvbadge[hidden] { display: none }
+body.panel-open .cvbtn { display: none }
+.cvmsg { background: #2A2150; border: 2px solid #7C5CFF; color: #E5DEFF; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; pointer-events: auto }
+.cvmsg[hidden] { display: none }
+.stack:has(#cv-msg:not([hidden])) { z-index: 950 }
+.cvmsg .cv-from { font-size: 13px; font-weight: 700; color: #B9A8FF; letter-spacing: .04em }
+.cvmsg .cv-txt { font-size: 20px; font-weight: 800; color: #fff; line-height: 1.2 }
+.cvmsg .cv-sub { font-size: 13px; opacity: .85 }
+.cvmsg .cv-acts { display: flex; gap: 8px }
+.cvmsg .cv-acts button { font: inherit; font-size: 14px; font-weight: 700; min-height: 44px; border-radius: 10px; border: none; padding: 0 14px; background: #7C5CFF; color: #fff; cursor: pointer }
+.cvmsg .cv-acts button.ghost { background: rgba(255,255,255,.12) }
+.cv-code { display: flex; justify-content: space-between; align-items: center; background: var(--bg); border-radius: 12px; padding: 12px 14px }
+.cv-code span { color: var(--muted); font-size: 13px; font-weight: 600 }
+.cv-code b { font-family: var(--mono); font-size: 26px; letter-spacing: .12em }
+.cv-link { display: flex; align-items: center; justify-content: center; text-decoration: none; color: var(--fg) }
+.cv-quick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
+.cv-quick button { font: inherit; font-size: 15px; font-weight: 700; min-height: 56px; border-radius: 12px; border: 2px solid var(--surface-2); background: var(--bg); color: var(--fg); cursor: pointer; text-align: left; padding: 6px 12px; line-height: 1.2 }
+.cv-quick button.sent { border-color: #7C5CFF }
+.talkbtn { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + var(--pb) + 376px); z-index: 500; width: 56px; height: 56px; border-radius: 50%; border: 3px solid #7C5CFF; background: var(--surface); color: #B9A8FF; display: none; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,0.45); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; padding: 0 }
+body.in-cv .talkbtn { display: flex }
+body.panel-open .talkbtn { display: none }
+.talkbtn.rec { background: #E5484D; border-color: #fff; color: #fff; transform: scale(1.15); animation: talkpulse 1s ease-in-out infinite }
+.talkbtn.wait { opacity: .6 }
+.talktime { position: absolute; left: 64px; top: 50%; transform: translateY(-50%); background: #E5484D; color: #fff; font: 800 14px var(--font); padding: 4px 10px; border-radius: 10px; white-space: nowrap; display: none }
+.talkbtn.rec .talktime { display: block }
+@keyframes talkpulse { 50% { box-shadow: 0 0 0 10px rgba(229,72,77,0.25) } }
+@media (prefers-reduced-motion: reduce) { .talkbtn.rec { animation: none } }
+.gest { position: fixed; inset: 0; z-index: 50; touch-action: none; -webkit-user-select: none; user-select: none }
+.gest[hidden] { display: none }
+body.gesturing #map, body.gesturing .upright, body.gesturing .compass svg { transition: none !important }
 body.mode3d .sky3d { display: block; position: fixed; left: 0; right: 0; top: 0; height: 34vh; z-index: 300; pointer-events: none; background: linear-gradient(#141B22 0%, #141B22 35%, rgba(20,27,34,0.75) 65%, rgba(20,27,34,0) 100%) }
 body.mode3d .car3d { display: block; position: fixed; left: calc(50vw - 28px); top: calc(var(--cy3d, 66vh) - 28px); z-index: 310; pointer-events: none; filter: drop-shadow(0 6px 6px rgba(0,0,0,.5)) }
 body.mode3d .attr3d { display: block; position: fixed; right: calc(env(safe-area-inset-right, 0px) + 80px); bottom: calc(env(safe-area-inset-bottom, 0px) + var(--pb) + 4px); z-index: 320; font-size: 10px; color: var(--muted); background: rgba(20,27,34,0.75); padding: 2px 6px; border-radius: 6px }
@@ -212,6 +245,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 </head>
 <body>
 <div id="map" role="application" aria-label="Mapa"></div>
+<div id="gest" class="gest" aria-hidden="true"></div>
 
 <div class="top" id="top">
   <div class="dot" id="gps-dot" aria-hidden="true"></div>
@@ -234,10 +268,19 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   <div class="lim" id="alert-lim">80</div>
   <div class="info"><small id="alert-kind">RADAR</small><b id="alert-dist">500 m</b><span id="alert-msg">Limite 80 km/h</span></div>
 </div>
+<div class="cvmsg" id="cv-msg" hidden role="alert"></div>
 <div class="hazard" id="hazard" hidden role="status"></div>
 <div class="chip" id="chip" hidden aria-live="polite"></div>
 </div>
 
+<button class="icon-btn cvbtn" id="cv-btn" type="button" aria-label="Comboio">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l1.4-4.2A2 2 0 0 1 6.3 11.4h5.4a2 2 0 0 1 1.9 1.4L15 17v3H3z"/><path d="M13 9.5l.9-2.7A2 2 0 0 1 15.8 5.4h3.4a2 2 0 0 1 1.9 1.4L22 10v3h-5"/><circle cx="6.5" cy="17.5" r=".6"/><circle cx="11.5" cy="17.5" r=".6"/></svg>
+  <span class="cvbadge" id="cv-badge" hidden></span>
+</button>
+<button class="talkbtn" id="cv-talk" type="button" aria-label="Falar no rádio do comboio (segure enquanto fala)">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+  <span class="talktime" id="cv-talk-time"></span>
+</button>
 <div class="zoomctl" role="group" aria-label="Zoom">
   <button type="button" id="zoom-in" aria-label="Aproximar">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -402,6 +445,42 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   </form>
 </div>
 
+<div class="sheet" id="convoy-sheet" hidden>
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h2>Comboio</h2>
+      <button class="icon-btn" id="cv-close" type="button" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p class="note" id="cv-note" role="status"></p>
+    <div id="cv-out">
+      <p class="note">Viaje junto com outros motoristas: vocês se veem no mapa, podem seguir a mesma rota e mandar avisos rápidos, como "quero parar no posto".</p>
+      <label for="cv-name" style="margin-top:12px">Seu nome<input id="cv-name" placeholder="Ex.: William" autocomplete="name"></label>
+      <button class="btn" type="button" id="cv-create" style="width:100%;margin-top:12px">Criar comboio</button>
+      <div class="row" style="margin-top:12px">
+        <label for="cv-code">Código de um comboio<input id="cv-code" placeholder="Ex.: K7M2QX" autocomplete="off" autocapitalize="characters" maxlength="12"></label>
+        <button class="btn ghost" type="button" id="cv-join" style="align-self:end">Entrar</button>
+      </div>
+    </div>
+    <div id="cv-in" hidden>
+      <div class="cv-code"><span>Código</span><b id="cv-code-txt"></b></div>
+      <div class="secondary">
+        <a class="sbtn cv-link" id="cv-wa" target="_blank" rel="noopener">Convidar pelo WhatsApp</a>
+        <button class="sbtn" type="button" id="cv-copy">Copiar link</button>
+      </div>
+      <p class="note" id="cv-status" role="status"></p>
+      <div class="list" id="cv-members"></div>
+      <p class="mode-title" style="margin-top:4px">Avisar o comboio</p>
+      <div class="cv-quick" id="cv-quick"></div>
+      <div class="row">
+        <label for="cv-text">Outro aviso<input id="cv-text" maxlength="120" placeholder="Escreva (só o passageiro)"></label>
+        <button class="btn ghost" type="button" id="cv-send" style="align-self:end">Enviar</button>
+      </div>
+      <div class="list" id="cv-history"></div>
+      <button class="btn ghost" type="button" id="cv-leave" style="width:100%">Sair do comboio</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet" id="orient-sheet" hidden>
   <div class="box">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
@@ -479,6 +558,7 @@ window.APP_CONFIG = {
   SUPABASE_URL: "https://ejlhypgwbeujhlzrhqtb.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_mAXucx5V_VcLLI0ujtFCvA_SwedjRwy"
 };
+
 </script>
 <script>
 // Cálculos de distância e direção, e as regras dos alertas. Sem dependência do mapa, para poder testar.
@@ -734,6 +814,7 @@ window.APP_CONFIG = {
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Geo = api;
 })(typeof window !== "undefined" ? window : globalThis);
+
 </script>
 <script>
 (() => {
@@ -840,7 +921,7 @@ window.APP_CONFIG = {
   const dirText = (d) => (d.both ? "vale para os dois sentidos" : d.dir != null ? `vale só para quem vai sentido ${G.compassName(d.dir)}` : "sentido ainda não definido");
 
   // ---------- Mapa ----------
-  const map = L.map("map", { zoomControl: false }).setView([-15.8, -47.9], 5);
+  const map = L.map("map", { zoomControl: false, zoomSnap: 0.25, zoomDelta: 1 }).setView([-15.8, -47.9], 5);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(map);
@@ -1722,7 +1803,8 @@ window.APP_CONFIG = {
   // ---------- Visão do mapa: 3D, direção (bússola) e zoom ----------
   const K_VIEW = "teste-ultrapassagem:visao";
   const ORIENTS = { carro: { nome: "Seguir o carro", sub: "o mapa gira e a frente do carro fica sempre para cima" },
-    N: { nome: "Norte para cima", ang: 0 }, S: { nome: "Sul para cima", ang: 180 }, E: { nome: "Leste para cima", ang: 90 }, W: { nome: "Oeste para cima", ang: 270 } };
+    N: { nome: "Norte para cima", ang: 0 }, S: { nome: "Sul para cima", ang: 180 }, E: { nome: "Leste para cima", ang: 90 }, W: { nome: "Oeste para cima", ang: 270 },
+    livre: { nome: "Girado com os dedos", sub: "para voltar, escolha outra opção" } };
   let view = Object.assign({ o2d: "N", o3d: "carro", zoom: 16, zoom3d: 17 }, store.get(K_VIEW, {}));
   if (!ORIENTS[view.o2d]) view.o2d = "N";
   if (!ORIENTS[view.o3d]) view.o3d = "carro";
@@ -1733,6 +1815,7 @@ window.APP_CONFIG = {
   function viewTarget() {
     const o = curOrient();
     if (o === "carro") { if (heading != null) lastTarget = heading; return lastTarget; }
+    if (o === "livre") return (mode3d ? view.a3d : view.a2d) || 0;
     return ORIENTS[o].ang;
   }
   function setRot(target) {
@@ -1757,6 +1840,9 @@ window.APP_CONFIG = {
       map.invalidateSize();
       if (pos) map.setView(pos, map.getZoom(), { animate: false });
     }
+    // Gestos: a camada dos dedos funciona em todas as posições; nas telas de marcar no mapa, o mapa recebe os toques direto
+    $("gest").hidden = suspended;
+    for (const h of [map.dragging, map.touchZoom, map.doubleClickZoom]) { if (h) { if (suspended) h.enable(); else h.disable(); } }
     const rotating = mode3d || want2dRot;
     const target = rotating ? viewTarget() : 0;
     setRot(target);
@@ -1808,8 +1894,8 @@ window.APP_CONFIG = {
   // Bússola: escolher para onde o mapa fica virado
   function renderOrient() {
     const o = curOrient();
-    $("orient-note").textContent = mode3d ? "Vale para a visão 3D." : "Vale para a visão de cima. Fora do \"Norte para cima\", o mapa não se arrasta com o dedo: use os botões de zoom.";
-    $("orient-list").innerHTML = Object.entries(ORIENTS).map(([k, v]) => `<button class="item orient-opt" type="button" data-orient="${k}" aria-pressed="${k === o}"><span><b>${v.nome}</b>${v.sub ? `<small>${v.sub}</small>` : ""}</span>${k === o ? '<span class="pill permitida">Em uso</span>' : ""}</button>`).join("");
+    $("orient-note").textContent = (mode3d ? "Vale para a visão 3D." : "Vale para a visão de cima.") + " Você também pode girar o mapa com dois dedos.";
+    $("orient-list").innerHTML = Object.entries(ORIENTS).filter(([k]) => k !== "livre" || k === o).map(([k, v]) => `<button class="item orient-opt" type="button" data-orient="${k}" aria-pressed="${k === o}"><span><b>${v.nome}</b>${v.sub ? `<small>${v.sub}</small>` : ""}</span>${k === o ? '<span class="pill permitida">Em uso</span>' : ""}</button>`).join("");
   }
   $("compass").addEventListener("click", () => { renderOrient(); $("orient-sheet").hidden = false; });
   $("orient-close").addEventListener("click", () => { $("orient-sheet").hidden = true; });
@@ -1822,6 +1908,95 @@ window.APP_CONFIG = {
     applyView();
     setStatus(`Mapa: ${ORIENTS[b.dataset.orient].nome.toLowerCase()}${mode3d ? " (3D)" : ""}.`);
   });
+
+  // ---------- Gestos com os dedos: arrastar, zoom e girar, em qualquer posição do mapa ----------
+  const gest = $("gest");
+  const ptrs = new Map();
+  let g = null, lastTap = 0, zoomRaf = 0, pendingZoom = null;
+  const TILT = Math.cos(48 * Math.PI / 180);
+  // Converte um movimento na tela para o movimento equivalente dentro do mapa (que pode estar girado e inclinado)
+  function screenToMap(dx, dy) {
+    const rotated = mode3d || rotClass;
+    if (!rotated) return [dx, dy];
+    if (mode3d) dy = dy / TILT;
+    const r = -rot3d * Math.PI / 180;
+    return [dx * Math.cos(r) - dy * Math.sin(r), dx * Math.sin(r) + dy * Math.cos(r)];
+  }
+  function stopFollow() { if (follow) { follow = false; $("recenter").classList.remove("active"); } }
+  function queueZoom(z) {
+    pendingZoom = Math.max(5, Math.min(19, z));
+    if (zoomRaf) return;
+    zoomRaf = requestAnimationFrame(() => {
+      zoomRaf = 0;
+      const zz = pendingZoom;
+      if (follow && pos) map.setView(pos, zz, { animate: false }); else map.setZoom(zz, { animate: false });
+      if (mode3d) view.zoom3d = zz; else view.zoom = zz;
+    });
+  }
+  const pts = () => [...ptrs.values()];
+  function begin() {
+    const p = pts();
+    if (p.length === 1) g = { kind: "pan", lx: p[0].x, ly: p[0].y };
+    else if (p.length >= 2) {
+      const [a, b] = p;
+      g = { kind: "two", d0: Math.hypot(b.x - a.x, b.y - a.y) || 1, a0: Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI,
+        z0: map.getZoom() || 16, t0: (mode3d || rotClass) ? -rot3d : 0, rotating: false };
+      document.body.classList.add("gesturing");
+    } else g = null;
+  }
+  gest.addEventListener("pointerdown", (e) => {
+    try { gest.setPointerCapture(e.pointerId); } catch (err) {}
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t0: Date.now(), moved: false, multi: ptrs.size > 0 });
+    if (ptrs.size > 1) for (const p of ptrs.values()) p.multi = true;
+    begin();
+  });
+  gest.addEventListener("pointermove", (e) => {
+    const p = ptrs.get(e.pointerId); if (!p || !g) return;
+    p.x = e.clientX; p.y = e.clientY;
+    if (Math.hypot(p.x - p.x0, p.y - p.y0) > 8) p.moved = true;
+    if (g.kind === "pan" && ptrs.size === 1) {
+      if (!p.moved) return;
+      const [mx, my] = screenToMap(p.x - g.lx, p.y - g.ly);
+      g.lx = p.x; g.ly = p.y;
+      stopFollow();
+      map.panBy([-mx, -my], { animate: false });
+    } else if (g.kind === "two" && ptrs.size >= 2) {
+      const [a, b] = pts();
+      const d = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      queueZoom(g.z0 + Math.log2(d / g.d0));
+      const ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+      let delta = ((ang - g.a0) % 360 + 540) % 360 - 180;
+      if (!g.rotating && Math.abs(delta) > 12) { g.rotating = true; g.a0 = ang; delta = 0; }
+      if (g.rotating) {
+        const target = ((g.t0 - delta) % 360 + 360) % 360;
+        if (mode3d) { view.o3d = "livre"; view.a3d = target; } else { view.o2d = "livre"; view.a2d = target; }
+        applyView();
+      }
+    }
+  });
+  function release(e) {
+    const p = ptrs.get(e.pointerId);
+    ptrs.delete(e.pointerId);
+    if (p && e.type === "pointerup" && !p.moved && !p.multi && Date.now() - p.t0 < 400 && ptrs.size === 0) {
+      const now = Date.now();
+      if (now - lastTap < 320) { lastTap = 0; zoomBy(1); }
+      else { lastTap = now; tapThrough(p.x, p.y); }
+    }
+    if (ptrs.size === 0) { g = null; document.body.classList.remove("gesturing"); saveView(); }
+    else begin();
+  }
+  gest.addEventListener("pointerup", release);
+  gest.addEventListener("pointercancel", release);
+  let wheelT = 0;
+  gest.addEventListener("wheel", (e) => { e.preventDefault(); const now = Date.now(); if (now - wheelT < 120) return; wheelT = now; zoomBy(e.deltaY < 0 ? 0.5 : -0.5); }, { passive: false });
+  // Um toque passa para o que estiver embaixo (radar, alerta, botão de um balão do mapa)
+  function tapThrough(x, y) {
+    gest.style.pointerEvents = "none";
+    const el = document.elementFromPoint(x, y);
+    gest.style.pointerEvents = "";
+    if (!el || el === gest) return;
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window }));
+  }
 
   // ---------- Painel de sinalizar (recolhível) ----------
   const K_PAINEL = "teste-ultrapassagem:painel-aberto";
@@ -2052,6 +2227,340 @@ window.APP_CONFIG = {
   map.on("dragstart", () => { follow = false; $("recenter").classList.remove("active"); });
   $("recenter").addEventListener("click", () => { follow = true; $("recenter").classList.add("active"); if (pos) map.setView(pos, map.getZoom()); });
 
+  // ---------- Comboio: motoristas viajando juntos ----------
+  const K_CV = "teste-ultrapassagem:comboio";
+  const CV_QUICK = [
+    { t: "posto", txt: "Quero parar no posto" }, { t: "banheiro", txt: "Preciso parar para ir ao banheiro" },
+    { t: "comer", txt: "Vamos parar para comer?" }, { t: "acostamento", txt: "Vou parar no acostamento" },
+    { t: "devagar", txt: "Vai mais devagar, estou ficando para trás" }, { t: "perigo", txt: "Atenção: perigo à frente" },
+    { t: "ok", txt: "Tudo certo por aqui" }, { t: "entendi", txt: "Ok, entendi!" }
+  ];
+  const CV_COLORS = ["#7C5CFF", "#FF7A45", "#3DD68C", "#FFD166", "#4DB2FF", "#F28482"];
+  let cv = store.get(K_CV, null);            // {code, lastId}
+  let cvMembers = [], cvHistory = [], cvOk = null, cvTimer = null, cvBusy = false, cvMsgTimer = null;
+  const cvLayer = L.layerGroup().addTo(map);
+  // Avisos do comboio aparecem dentro da tela do comboio (quando aberta) e no balão
+  function cvNote(text, err) { const n = $("cv-note"); if (n) { n.textContent = text || ""; n.style.color = err ? "var(--radar)" : ""; } setStatus(text, err); }
+  const cvName = () => (store.get(K.nome, "") || "").trim();
+  async function rpc(fn, args) {
+    const r = await api("rpc/" + fn, { method: "POST", body: JSON.stringify(args) });
+    if (!r.ok) { const e = new Error("rpc " + r.status); e.status = r.status; throw e; }
+    const t = await r.text();
+    return t ? JSON.parse(t) : null;
+  }
+  const cvColor = (id) => { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return CV_COLORS[h % CV_COLORS.length]; };
+  const hhmm = (iso) => new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  function relPos(ll) {
+    if (!pos) return "";
+    const d = G.dist(pos, ll);
+    if (d < 60) return "junto de você";
+    if (heading == null) return `a ${fmtDist(d)}`;
+    return `${fmtDist(d)} ${G.angleDiff(G.bearing(pos, ll), heading) < 90 ? "à frente" : "atrás"}`;
+  }
+  function nearestFuelAhead() {
+    if (!pos || !pois || !pois.items) return null;
+    let best = null;
+    for (const p of pois.items) {
+      if (p.cat !== "combustivel") continue;
+      const ll = [p.lat, p.lng], d = G.dist(pos, ll);
+      if (d > 25000 || d < 30) continue;
+      if (heading != null && G.angleDiff(G.bearing(pos, ll), heading) > 60) continue;
+      if (!best || d < best.d) best = { d, nome: p.nome || p.marca || "Posto", ll };
+    }
+    return best;
+  }
+  function drawCv() {
+    cvLayer.clearLayers();
+    if (!cv) return;
+    for (const m of cvMembers) {
+      const stale = Date.now() - new Date(m.atualizado_em).getTime() > 120000, cor = cvColor(m.dispositivo);
+      const nome = (m.nome || "Motorista").slice(0, 16), ini = esc(nome.charAt(0).toUpperCase());
+      L.marker([m.lat, m.lng], { zIndexOffset: 900, icon: L.divIcon({ className: "", iconSize: [120, 56], iconAnchor: [60, 18],
+        html: `<div class="upright" style="width:120px;display:flex;flex-direction:column;align-items:center;gap:2px;opacity:${stale ? 0.5 : 1}"><div style="width:36px;height:36px;border-radius:50%;background:${cor};border:3px solid #fff;display:flex;align-items:center;justify-content:center;font:800 16px Overpass,Arial,sans-serif;color:#141B22;box-shadow:0 2px 8px rgba(0,0,0,.5)">${ini}</div><div style="font:700 12px Overpass,Arial,sans-serif;color:#fff;background:rgba(20,27,34,.85);padding:1px 6px;border-radius:6px;white-space:nowrap">${esc(nome)}</div></div>` }) }).addTo(cvLayer);
+    }
+  }
+  function renderCv() {
+    const inCv = !!cv;
+    document.body.classList.toggle("in-cv", inCv);
+    $("cv-out").hidden = inCv; $("cv-in").hidden = !inCv;
+    $("cv-btn").classList.toggle("on", inCv);
+    const online = cvMembers.filter((m) => Date.now() - new Date(m.atualizado_em).getTime() < 120000).length;
+    $("cv-badge").hidden = !inCv || !online; $("cv-badge").textContent = online;
+    if (!inCv) { $("cv-name").value = cvName(); return; }
+    $("cv-code-txt").textContent = cv.code;
+    const link = location.origin + location.pathname + "?comboio=" + cv.code;
+    $("cv-wa").href = "https://wa.me/?text=" + encodeURIComponent(`Entra no meu comboio no app de ultrapassagem: ${link} (código ${cv.code})`);
+    $("cv-status").textContent = cvOk === false ? "Sem conexão com o comboio agora. Tentando de novo…" : cvMembers.length ? "" : "Ninguém mais entrou ainda. Mande o convite pelo WhatsApp.";
+    $("cv-members").innerHTML = cvMembers.map((m) => {
+      const stale = Date.now() - new Date(m.atualizado_em).getTime() > 120000;
+      const seguir = m.destino_lat != null && !(nav && G.dist(nav.dest.ll, [m.destino_lat, m.destino_lng]) < 200)
+        ? `<button class="sbtn" type="button" data-follow="${esc(m.dispositivo)}" style="min-height:40px;padding:0 10px">Ir junto</button>` : "";
+      return `<div class="item" style="cursor:default"><span><b style="color:${cvColor(m.dispositivo)}">${esc(m.nome || "Motorista")}</b><small>${stale ? "sem sinal desde " + hhmm(m.atualizado_em) : `${relPos([m.lat, m.lng])}${m.kmh != null ? " · " + m.kmh + " km/h" : ""}`}${m.destino_nome ? " · indo para " + esc(m.destino_nome) : ""}</small></span>${seguir}</div>`;
+    }).join("");
+    $("cv-quick").innerHTML = CV_QUICK.map((q) => `<button type="button" data-cvq="${q.t}">${esc(q.txt)}</button>`).join("");
+    $("cv-history").innerHTML = cvHistory.slice(-6).reverse().map((m) => `<div class="item" style="cursor:default"><span><b>${m.dispositivo === device ? "Você" : esc(m.nome || "Motorista")} · ${hhmm(m.criado_em)}</b><small>${esc(m.texto)}${m.ref_nome ? " · " + esc(m.ref_nome) : ""}</small></span>${m.audio_id ? `<button class="sbtn" type="button" data-play="${m.audio_id}" style="min-height:40px;padding:0 12px">Ouvir</button>` : ""}</div>`).join("");
+  }
+  function showCvMsg(m) {
+    const box = $("cv-msg");
+    if (m.tipo === "audio") {
+      const ll = m.lat != null ? [m.lat, m.lng] : null;
+      box.innerHTML = `<span class="cv-from">${esc((m.nome || "Motorista").toUpperCase())} · RÁDIO · ${hhmm(m.criado_em)}</span><span class="cv-txt">${esc(m.texto)}</span>
+        <span class="cv-sub" id="cv-msg-state">${ll ? esc(relPos(ll)) : ""}</span>
+        <span class="cv-acts"><button type="button" data-cva="play" data-aid="${m.audio_id}">Ouvir de novo</button><button type="button" class="ghost" data-cva="close">Fechar</button></span>`;
+      box.hidden = false; box._ref = null;
+      clearTimeout(cvMsgTimer);
+      cvMsgTimer = setTimeout(() => { box.hidden = true; }, 30000);
+      return;
+    }
+    const ll = m.lat != null ? [m.lat, m.lng] : null;
+    const ref = m.ref_lat != null ? { ll: [m.ref_lat, m.ref_lng], nome: m.ref_nome || "local indicado" } : null;
+    box.innerHTML = `<span class="cv-from">${esc((m.nome || "Motorista").toUpperCase())} · COMBOIO · ${hhmm(m.criado_em)}</span><span class="cv-txt">${esc(m.texto)}</span>
+      <span class="cv-sub">${ll ? esc(relPos(ll)) : ""}${ref ? ` · ${esc(ref.nome)}${pos ? ", a " + fmtDist(G.dist(pos, ref.ll)) + " de você" : ""}` : ""}</span>
+      <span class="cv-acts">${m.tipo !== "entendi" ? '<button type="button" data-cva="ok">Ok, entendi</button>' : ""}${ref ? '<button type="button" data-cva="go">Ir até lá</button>' : ""}<button type="button" class="ghost" data-cva="close">Fechar</button></span>`;
+    box.hidden = false;
+    box._ref = ref;
+    clearTimeout(cvMsgTimer);
+    cvMsgTimer = setTimeout(() => { box.hidden = true; }, 25000);
+    if (m.tipo !== "entendi") beep(2);
+    speak(`${m.nome || "Comboio"} diz: ${m.texto}`, m.tipo === "perigo");
+  }
+  $("cv-msg").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-cva]"); if (!b) return;
+    const box = $("cv-msg");
+    if (b.dataset.cva === "play") { playCvAudio(+b.dataset.aid, true); return; }
+    if (b.dataset.cva === "ok") sendCv("entendi", "Ok, entendi!");
+    if (b.dataset.cva === "go" && box._ref) startRoute({ ll: box._ref.ll, short: box._ref.nome, name: box._ref.nome });
+    box.hidden = true;
+  });
+  async function cvTick(silent) {
+    if (!cv || cvBusy || !REMOTE) return;
+    cvBusy = true;
+    try {
+      if (pos) {
+        await rpc("comboio_atualizar", { c: cv.code, d: device, n: cvName() || "Motorista", la: +pos[0].toFixed(6), lo: +pos[1].toFixed(6),
+          dir: heading != null ? Math.round(heading) % 360 : null, v: kmh != null ? Math.round(kmh) : null,
+          dla: nav ? nav.dest.ll[0] : null, dlo: nav ? nav.dest.ll[1] : null, dnome: nav ? String(nav.dest.short || "").slice(0, 120) : null });
+      }
+      const rows = (await rpc("comboio_ler", { c: cv.code })) || [];
+      cvMembers = rows.filter((r) => r.dispositivo !== device);
+      const msgs = (await rpc("comboio_mensagens", { c: cv.code, desde: cv.lastId || 0 })) || [];
+      for (const m of msgs) {
+        cv.lastId = Math.max(cv.lastId || 0, m.id);
+        if (!cvHistory.some((h) => h.id === m.id)) cvHistory.push(m);
+        if (!silent && m.dispositivo !== device) { showCvMsg(m); if (m.tipo === "audio" && m.audio_id) queueCvAudio(m.audio_id); }
+      }
+      cvHistory = cvHistory.filter((h) => h.id != null || Date.now() - new Date(h.criado_em).getTime() < 60000).slice(-30);
+      store.set(K_CV, cv);
+      cvOk = true;
+    } catch (e) { cvOk = false; }
+    cvBusy = false;
+    drawCv();
+    if (!$("convoy-sheet").hidden) renderCv(); else renderCvBadge();
+  }
+  function renderCvBadge() {
+    document.body.classList.toggle("in-cv", !!cv);
+    const online = cv ? cvMembers.filter((m) => Date.now() - new Date(m.atualizado_em).getTime() < 120000).length : 0;
+    $("cv-btn").classList.toggle("on", !!cv);
+    $("cv-badge").hidden = !online; $("cv-badge").textContent = online;
+  }
+  function cvStart() { clearInterval(cvTimer); if (cv) cvTimer = setInterval(() => { if (document.visibilityState === "visible") cvTick(false); }, 4000); }
+  async function joinCv(code, criando) {
+    code = String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+    if (code.length < 4) { cvNote("Digite o código do comboio (4 a 12 letras e números).", true); return; }
+    const nome = $("cv-name").value.trim().slice(0, 40);
+    if (!nome) { $("cv-name").focus(); cvNote("Escreva seu nome para o comboio saber quem é você.", true); return; }
+    store.set(K.nome, nome); if ($("nome")) $("nome").value = nome;
+    if (!REMOTE) { cvNote("O comboio precisa do banco de dados configurado.", true); return; }
+    try { await rpc("comboio_ler", { c: code }); }
+    catch (e) { cvNote(e.status === 404 ? "O banco ainda não tem o comboio. Rode o código novo no Supabase." : "Não foi possível conectar ao comboio. Confira a internet.", true); return; }
+    cv = { code, lastId: 0 }; cvHistory = []; cvMembers = [];
+    store.set(K_CV, cv);
+    await cvTick(true);
+    cvStart();
+    renderCv();
+    cvNote(criando ? `Comboio ${code} criado. Convide os outros motoristas.` : `Você entrou no comboio ${code}.`);
+    if (!criando && cvMembers.length) sendCv("entrou", `${nome} entrou no comboio`);
+  }
+  async function sendCv(tipo, texto, btn) {
+    if (!cv) return;
+    let ref = null;
+    if (tipo === "posto") { const f = nearestFuelAhead(); if (f) ref = { nome: f.nome, la: f.ll[0], lo: f.ll[1] }; }
+    const local = { id: null, dispositivo: device, nome: cvName(), tipo, texto, ref_nome: ref && ref.nome, criado_em: new Date().toISOString() };
+    cvHistory.push(local);
+    try {
+      const id = await rpc("comboio_enviar", { c: cv.code, d: device, n: cvName() || "Motorista", t: tipo, tx: String(texto).slice(0, 200),
+        la: pos ? +pos[0].toFixed(6) : null, lo: pos ? +pos[1].toFixed(6) : null, rn: ref ? ref.nome : null, rla: ref ? ref.la : null, rlo: ref ? ref.lo : null });
+      local.id = id;
+      if (btn) { btn.classList.add("sent"); setTimeout(() => btn.classList.remove("sent"), 1500); }
+      cvNote(ref ? `Aviso enviado ao comboio, com o posto mais perto: ${ref.nome}.` : "Aviso enviado ao comboio.");
+    } catch (e) { cvHistory = cvHistory.filter((h) => h !== local); cvNote("Não foi possível enviar o aviso. Confira a internet.", true); }
+    if (!$("convoy-sheet").hidden) renderCv();
+  }
+  async function leaveCv() {
+    if (!cv) return;
+    const code = cv.code;
+    try { await rpc("comboio_sair", { c: code, d: device }); } catch (e) {}
+    if (rec) stopTalk(true);
+    cv = null; cvMembers = []; cvHistory = [];
+    store.set(K_CV, null); clearInterval(cvTimer);
+    drawCv(); renderCv(); renderCvBadge();
+    cvNote("Você saiu do comboio. Sua localização parou de ser compartilhada.");
+  }
+  // ----- Rádio do comboio: segure o microfone, fale, solte; toca sozinho nos outros carros
+  const MAX_TALK = 30000;
+  let rec = null, talkStarting = false, pressAt = 0, pressUp = false, talkTick = null;
+  const audioCache = new Map(), audioQueue = [];
+  let audioNow = null;
+  function talkUi(state, txt) {
+    const b = $("cv-talk");
+    b.classList.toggle("rec", state === "rec"); b.classList.toggle("wait", state === "wait");
+    $("cv-talk-time").textContent = txt || "";
+  }
+  function blobToB64(blob) {
+    return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.onerror = no; r.readAsDataURL(blob); });
+  }
+  async function startTalk() {
+    if (!cv || rec || talkStarting) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { cvNote("Este navegador não consegue gravar áudio.", true); return; }
+    talkStarting = true; talkUi("wait");
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+    catch (e) { talkStarting = false; talkUi(); cvNote("Libere o microfone para falar no comboio (toque no cadeado ao lado do endereço).", true); return; }
+    talkStarting = false;
+    if (pressUp && Date.now() - pressAt > 700) {          // soltou enquanto o celular pedia permissão
+      stream.getTracks().forEach((t) => t.stop()); talkUi();
+      cvNote("Microfone liberado. Agora segure o botão enquanto fala."); return;
+    }
+    const tipos = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4", "audio/webm"];
+    const mime = tipos.find((t) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
+    let mr;
+    try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 24000 } : undefined); }
+    catch (e) { mr = new MediaRecorder(stream); }
+    const r = { mr, chunks: [], t0: Date.now(), stream, mime: (mr.mimeType || mime || "audio/webm").split(";")[0] };
+    mr.ondataavailable = (e) => { if (e.data && e.data.size) r.chunks.push(e.data); };
+    mr.onstop = () => finishTalk(r);
+    rec = r;
+    if (pressUp) r.toggle = true;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    if (audioNow) { try { audioNow.pause(); } catch (e) {} }
+    mr.start(250);
+    beep(1);
+    talkUi("rec", "Falando… 0 s");
+    talkTick = setInterval(() => { if (rec) talkUi("rec", `Falando… ${Math.floor((Date.now() - rec.t0) / 1000)} s · ${rec.toggle ? "toque para enviar" : "solte para enviar"}`); }, 300);
+    r.timer = setTimeout(() => stopTalk(), MAX_TALK);
+  }
+  function stopTalk(cancel) {
+    if (!rec) return;
+    const r = rec; rec = null; r.cancel = !!cancel;
+    clearTimeout(r.timer); clearInterval(talkTick); talkUi();
+    try { r.mr.stop(); } catch (e) {}
+    r.stream.getTracks().forEach((t) => t.stop());
+  }
+  async function finishTalk(r) {
+    const dur = Date.now() - r.t0;
+    if (r.cancel) return;
+    if (dur < 700) { cvNote("Áudio curto demais. Segure o botão enquanto fala."); return; }
+    if (!cv) return;
+    const b64 = await blobToB64(new Blob(r.chunks, { type: r.mime }));
+    if (!b64) { cvNote("Não gravou nada. Tente de novo.", true); return; }
+    if (b64.length > 400000) { cvNote("Áudio grande demais. Fale até 30 segundos.", true); return; }
+    try {
+      const id = await rpc("comboio_enviar_audio", { c: cv.code, d: device, n: cvName() || "Motorista", mime: r.mime, dados: b64, dur: Math.round(dur),
+        la: pos ? +pos[0].toFixed(6) : null, lo: pos ? +pos[1].toFixed(6) : null });
+      cvHistory.push({ id, dispositivo: device, nome: cvName(), tipo: "audio", texto: `Mensagem de voz (${Math.max(1, Math.round(dur / 1000))} s)`, criado_em: new Date().toISOString() });
+      cvNote("Áudio enviado ao comboio.");
+    } catch (e) {
+      cvNote(e.status === 404 ? "O banco ainda não tem o rádio. Rode o radio.sql no Supabase." : "Não foi possível enviar o áudio. Confira a internet.", true);
+    }
+    if (!$("convoy-sheet").hidden) renderCv();
+  }
+  async function getCvAudio(aid) {
+    if (audioCache.has(aid)) return audioCache.get(aid);
+    const rows = (await rpc("comboio_audio", { c: cv.code, aid })) || [];
+    if (!rows.length) return null;
+    const src = "data:" + rows[0].mime + ";base64," + rows[0].dados;
+    audioCache.set(aid, src);
+    if (audioCache.size > 20) audioCache.delete(audioCache.keys().next().value);
+    return src;
+  }
+  function queueCvAudio(aid) {
+    if (!soundOn) { cvNote("Chegou um áudio do comboio. O som está desligado: toque em Ouvir."); return; }
+    audioQueue.push(aid);
+    if (!audioNow) nextCvAudio();
+  }
+  async function nextCvAudio() {
+    const aid = audioQueue.shift();
+    if (aid == null) { audioNow = null; return; }
+    await playCvAudio(aid, false);
+  }
+  async function playCvAudio(aid, manual) {
+    if (!cv || rec) return;
+    let src;
+    try { src = await getCvAudio(aid); } catch (e) { src = null; }
+    if (!src) { cvNote("Esse áudio não está mais disponível.", true); if (!manual) nextCvAudio(); return; }
+    if (audioNow) { try { audioNow.pause(); } catch (e) {} }
+    try { speechSynthesis.cancel(); } catch (e) {}
+    const a = new Audio(src);
+    audioNow = a; window.__cvAudio = a;
+    const st = $("cv-msg-state");
+    if (st) st.textContent = "Tocando…";
+    a.onended = a.onerror = () => { if (st) st.textContent = "Ouvido"; if (audioNow === a) { audioNow = null; nextCvAudio(); } };
+    try { await a.play(); }
+    catch (e) { audioNow = null; if (st) st.textContent = "Toque em Ouvir de novo"; cvNote("O navegador não deixou tocar sozinho. Toque em Ouvir.", true); }
+  }
+  // Segurar = fala enquanto segura. Toque rápido = começa; outro toque = envia.
+  const talk = $("cv-talk");
+  talk.addEventListener("contextmenu", (e) => e.preventDefault());
+  talk.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    try { talk.setPointerCapture(e.pointerId); } catch (err) {}
+    if (rec) { talk._stopOnUp = true; return; }
+    pressAt = Date.now(); pressUp = false; talk._stopOnUp = false;
+    startTalk();
+  });
+  const talkUp = (e) => {
+    pressUp = true;
+    if (talk._stopOnUp) { talk._stopOnUp = false; stopTalk(); return; }
+    if (rec && Date.now() - pressAt > 700) stopTalk(e.type === "pointercancel");
+    else if (rec) rec.toggle = true;
+  };
+  talk.addEventListener("pointerup", talkUp);
+  talk.addEventListener("pointercancel", talkUp);
+
+  $("cv-btn").addEventListener("click", () => { renderCv(); $("convoy-sheet").hidden = false; if (cv) cvTick(true); });
+  $("cv-close").addEventListener("click", () => { $("convoy-sheet").hidden = true; });
+  $("convoy-sheet").addEventListener("click", (ev) => {
+    if (ev.target === $("convoy-sheet")) { $("convoy-sheet").hidden = true; return; }
+    const q = ev.target.closest("[data-cvq]");
+    if (q) { const it = CV_QUICK.find((x) => x.t === q.dataset.cvq); if (it) sendCv(it.t, it.txt, q); return; }
+    const pl = ev.target.closest("[data-play]");
+    if (pl) { playCvAudio(+pl.dataset.play, true); return; }
+    const f = ev.target.closest("[data-follow]");
+    if (f) { const m = cvMembers.find((x) => x.dispositivo === f.dataset.follow); if (m) { $("convoy-sheet").hidden = true; startRoute({ ll: [m.destino_lat, m.destino_lng], short: m.destino_nome || "destino do comboio", name: m.destino_nome || "" }); } }
+  });
+  $("cv-create").addEventListener("click", () => {
+    const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let code = "";
+    const rnd = new Uint32Array(6); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(rnd) : rnd.forEach((_, i) => (rnd[i] = Math.random() * 1e9));
+    for (const n of rnd) code += abc[n % abc.length];
+    joinCv(code, true);
+  });
+  $("cv-join").addEventListener("click", () => joinCv($("cv-code").value, false));
+  $("cv-send").addEventListener("click", () => { const t = $("cv-text").value.trim(); if (!t) return; sendCv("texto", t); $("cv-text").value = ""; });
+  $("cv-leave").addEventListener("click", leaveCv);
+  $("cv-copy").addEventListener("click", async () => {
+    const link = location.origin + location.pathname + "?comboio=" + cv.code;
+    try { await navigator.clipboard.writeText(link); cvNote("Link do comboio copiado."); }
+    catch (e) { $("cv-text").value = link; $("cv-text").select(); cvNote("Copie o link do campo de texto.", true); }
+  });
+  // Abriu o app por um convite: já deixa o código preenchido
+  const cvInvite = new URLSearchParams(location.search).get("comboio");
+  if (cvInvite && (!cv || cv.code !== cvInvite.toUpperCase())) {
+    $("cv-code").value = cvInvite.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+    $("go").addEventListener("click", () => setTimeout(() => { renderCv(); $("convoy-sheet").hidden = false; cvNote("Você foi convidado para um comboio. Escreva seu nome e toque em Entrar."); }, 300));
+  }
+  if (cv) { cvStart(); setTimeout(() => cvTick(true), 1500); }
+  renderCvBadge();
+
   // ---------- Início ----------
   restoreDrive();
   applyView();
@@ -2061,6 +2570,7 @@ window.APP_CONFIG = {
   setInterval(sync, 60000);
   window.addEventListener("online", sync);
 })();
+
 </script>
 </body>
 </html>
